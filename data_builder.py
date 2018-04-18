@@ -1,5 +1,6 @@
 import os
 import cv2
+import sys
 import numpy as np
 import scipy.io as io
 from collections import Counter
@@ -53,3 +54,16 @@ def create_training_data(in_dir, out_dir, patch_size):
     print("Done!")
     print("Number of Patches: " + str(patch_count))
     print("Patch Types: " + str(Counter(classifications)))
+
+    
+if __name__ == "__main__":
+    in_dir = sys.argv[2]
+    if in_dir[-1] != '/':
+        in_dir += '/'
+
+    out_dir = sys.argv[3]
+    if out_dir[-1] != '/':
+        out_dir += '/'
+
+    if sys.argv[1].lower() == 'train':
+        create_training_data(in_dir, out_dir, int(sys.argv[4]))
