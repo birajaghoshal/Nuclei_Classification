@@ -20,7 +20,9 @@ class Model:
         self.X = tf.placeholder("float", [None] + self.input_shape, name='X')
         self.Y = tf.placeholder("float", [None, self.num_classes], name='Y')
 
+        # Creates the classification model
         self.model = "model"
+        self.log('Classification Model has been created\n')
 
     def __copy__(self):
         """ Resets the model and returns a copy of the model.
@@ -29,3 +31,13 @@ class Model:
 
         tf.reset_default_graph()
         return Model(self.config)
+
+    def log(self, message):
+        """ Function to handle printing and logging of messages.
+        :param message: String of message to be printed and logged.
+        """
+
+        if self.config.verbose:
+            print(message)
+        if self.config.log_file != '':
+            print(message, file=open(self.config.log_file, 'a'))
