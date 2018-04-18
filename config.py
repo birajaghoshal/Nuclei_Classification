@@ -26,7 +26,8 @@ def load_configs():
     # Standard Parameters
     parser.add_argument("--config_file", type=str, default="config.ini",
                         help="File path to configurations file.")
-    parser.add_argument("--verbose", action="store_true", default=config["standard"]["verbose"].lower() == "true",
+    parser.add_argument("--verbose", action="store_true",
+                        default=config["standard"]["verbose"].lower() == "true",
                         help="Boolean if the program should display outputs while running.")
     parser.add_argument("--mode", type=str, default=config["standard"]["mode"],
                         help="The mode to run the program. [supervised, random]")
@@ -46,5 +47,19 @@ def load_configs():
                         help="Boolean if the model should use MCdropout to simulate bayesian uncertainty.")
     parser.add_argument("--model_path", type=str, default=config["model"]["model_path"],
                         help="File path where the models weights shall be saved and loaded.")
+
+    # Optimiser Parameters
+    parser.add_argument('--weighted_loss', action='store_true',
+                        default=config['optimiser']['weighted_loss'].lower() == 'true',
+                        help='Boolean if the loss should be weighted.')
+    parser.add_argument('--learning_rate', type=float, default=float(config['optimiser']['learning_rate']),
+                        help='The learning rate for the model.')
+    parser.add_argument('--decay', type=float, default=float(config['optimiser']['decay']),
+                        help='Learning rate decay over each update.')
+    parser.add_argument('--epsilon', type=float, default=float(config['optimiser']['epsilon']),
+                        help='Scale the weights learning rate.')
+    parser.add_argument('--use_locking', action='store_true',
+                        default=config['optimiser']['use_locking'].lower() == 'true',
+                        help='If locks should be used for weight updates.')
 
     return parser.parse_args()
