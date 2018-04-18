@@ -49,17 +49,27 @@ def load_configs():
                         help="File path where the models weights shall be saved and loaded.")
 
     # Optimiser Parameters
-    parser.add_argument('--weighted_loss', action='store_true',
-                        default=config['optimiser']['weighted_loss'].lower() == 'true',
-                        help='Boolean if the loss should be weighted.')
-    parser.add_argument('--learning_rate', type=float, default=float(config['optimiser']['learning_rate']),
-                        help='The learning rate for the model.')
-    parser.add_argument('--decay', type=float, default=float(config['optimiser']['decay']),
-                        help='Learning rate decay over each update.')
-    parser.add_argument('--epsilon', type=float, default=float(config['optimiser']['epsilon']),
-                        help='Scale the weights learning rate.')
-    parser.add_argument('--use_locking', action='store_true',
-                        default=config['optimiser']['use_locking'].lower() == 'true',
-                        help='If locks should be used for weight updates.')
+    parser.add_argument("--weighted_loss", action="store_true",
+                        default=config["optimiser"]["weighted_loss"].lower() == "true",
+                        help="Boolean if the loss should be weighted.")
+    parser.add_argument("--learning_rate", type=float, default=float(config["optimiser"]["learning_rate"]),
+                        help="The learning rate for the model.")
+    parser.add_argument("--decay", type=float, default=float(config["optimiser"]["decay"]),
+                        help="Learning rate decay over each update.")
+    parser.add_argument("--epsilon", type=float, default=float(config["optimiser"]["epsilon"]),
+                        help="Scale the weights learning rate.")
+    parser.add_argument("--use_locking", action="store_true",
+                        default=config["optimiser"]["use_locking"].lower() == "true",
+                        help="If locks should be used for weight updates.")
+
+    # Converge Checking Parameters
+    parser.add_argument("--training_threshold", type=float, default=float(config["converge"]["training_threshold"]),
+                        help="A threshold for the training process usually set between 0.5 and 3.")
+    parser.add_argument("--max_epochs", type=int, default=int(config["converge"]["max_epochs"]),
+                        help="The maximum epochs training can run for.")
+    parser.add_argument("--min_epochs", type=int, default=int(config["converge"]["min_epochs"]),
+                        help="The minimum epochs training can run for.")
+    parser.add_argument("--batch_epochs", type=int, default=int(config["converge"]["batch_epochs"]),
+                        help="The batch size of the training losses to calculate training progress.")
 
     return parser.parse_args()
