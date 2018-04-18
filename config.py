@@ -33,6 +33,19 @@ def load_configs():
                         help="The mode to run the program. [supervised, random]")
     parser.add_argument("--log_file", type=str, default=config["standard"]["log_file"],
                         help="File path to log the program's output.")
+
+    # Data Parameters
+    parser.add_argument("--data_dir", type=str, default=config["data"]["data_dir"],
+                        help="Directory path to dataset used to train the model.")
+    parser.add_argument("--val_per", type=float, default=float(config["data"]["val_per"]),
+                        help="Float to represent the validation percentage.")
+    parser.add_argument("--test_per", type=float, default=float(config["data"]["test_per"]),
+                        help="Float to represent the testing percentage.")
+    parser.add_argument("--balance", action="store_true",
+                        default=config["data"]["balance"].lower() == "true",
+                        help="Boolean if the data should be down-sampled to balance the classes.")
+    parser.add_argument("--combine", type=str, default=config["data"]["combine"],
+                        help="<Method on how to combine the new data to the existing data. [add or replace]")
     
     # Model Parameters
     parser.add_argument("--input_height", type=int, default=int(config["model"]["input_height"]),
