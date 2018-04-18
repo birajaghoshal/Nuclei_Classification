@@ -57,7 +57,7 @@ class Model:
             :return: A tensor.
             """
 
-            return tf.nn.max_pool(input_tensor, ksize=[1, k, k, 1], strides=[1, d, d, 1], padding='VALID', name=name)
+            return tf.nn.max_pool(input_tensor, ksize=[1, k, k, 1], strides=[1, d, d, 1], padding="VALID", name=name)
 
         def convolution(input_tensor, k, d, n_out, name, activation_fn=tf.nn.relu, batch_norm=True):
             """ Creates a Convolutional layer operation.
@@ -131,25 +131,56 @@ class Model:
             return input
 
         # Block 1
-        model = convolution(self.X, 3, 1, 64, 'Conv_1.1')
-        model = convolution(model, 3, 1, 64, 'Conv_1.2')
-        model = max_pool(model, 2, 2, 'Pool_1.1')
+        model = convolution(self.X, 3, 1, 64, "Conv_1.1")
+        model = convolution(model, 3, 1, 64, "Conv_1.2")
+        model = max_pool(model, 2, 2, "Pool_1.1")
 
         # Block 2
-        model = convolution(model, 3, 1, 128, 'Conv_2.1')
-        model = convolution(model, 3, 1, 128, 'Conv_2.2')
-        model = max_pool(model, 2, 2, 'Pool_2.1')
+        model = convolution(model, 3, 1, 128, "Conv_2.1")
+        model = convolution(model, 3, 1, 128, "Conv_2.2")
+        model = max_pool(model, 2, 2, "Pool_2.1")
 
         # Block 3
-        model = convolution(model, 3, 1, 256, 'Conv_3.1')
-        model = convolution(model, 3, 1, 256, 'Conv_3.2')
-        model = convolution(model, 3, 1, 256, 'Conv_3.3')
-        model = max_pool(model, 2, 2, 'Pool_3.1')
+        model = convolution(model, 3, 1, 256, "Conv_3.1")
+        model = convolution(model, 3, 1, 256, "Conv_3.2")
+        model = convolution(model, 3, 1, 256, "Conv_3.3")
+        model = max_pool(model, 2, 2, "Pool_3.1")
 
         # Block 4
         model = tf.contrib.layers.flatten(model)
-        model = fully_connected(model, 1024, 'Full_1')
-        model = fully_connected(model, 1024, 'Full_2')
+        model = fully_connected(model, 1024, "Full_1")
+        model = fully_connected(model, 1024, "Full_2")
 
         # Output
-        return fully_connected(model, self.num_classes, 'Output')
+        return fully_connected(model, self.num_classes, "Output", activation_fn=linear)
+
+    def optimiser(self, weights):
+        """ Creates the loss and optimiser operations for training the model.
+        :param weights: A set of weights based on the class count to be applied to the logits.
+        :return: Two tensor operations to calculate loss and to optimise based on loss
+        """
+
+        # Creates the loss operation with the output of the model and the labels.
+        if self.config.weighted_loss:
+            # Creates a tensor with the weights.
+            weights = tf.constant(weights, dtype=tf.float32)
+
+            # Multiplies the logits with the weights.
+            logits = tf.multiply(self.model, weights)
+
+            # Creates the loss operation with the weights logits.
+            loss = tf.losses.softmax_cross_entropy(onehot_labels=self.Y, logits=logits)
+        else:
+            # Creates the loss operation.
+            loss = tf.losses.softmax_cross_entropy(onehot_labels=self.Y, logits=self.model)
+
+        # Creates the optimiser with the parameters from the configs.
+        optimiser = tf.train.AdadeltaOptimizer(self.config.learning_rate, self.config.decay,
+                                               self.config.epsilon, self.config.use_locking)
+
+        # Creates the optimiser operation based on the loss.
+        optimiser = optimiser.minimize(loss)
+
+        # Returns both the loss and optimiser operations.
+        return loss, optimiser
+
