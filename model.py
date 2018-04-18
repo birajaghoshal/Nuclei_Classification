@@ -130,3 +130,26 @@ class Model:
 
             return input
 
+        # Block 1
+        model = convolution(self.X, 3, 1, 64, 'Conv_1.1')
+        model = convolution(model, 3, 1, 64, 'Conv_1.2')
+        model = max_pool(model, 2, 2, 'Pool_1.1')
+
+        # Block 2
+        model = convolution(model, 3, 1, 128, 'Conv_2.1')
+        model = convolution(model, 3, 1, 128, 'Conv_2.2')
+        model = max_pool(model, 2, 2, 'Pool_2.1')
+
+        # Block 3
+        model = convolution(model, 3, 1, 256, 'Conv_3.1')
+        model = convolution(model, 3, 1, 256, 'Conv_3.2')
+        model = convolution(model, 3, 1, 256, 'Conv_3.3')
+        model = max_pool(model, 2, 2, 'Pool_3.1')
+
+        # Block 4
+        model = tf.contrib.layers.flatten(model)
+        model = fully_connected(model, 1024, 'Full_1')
+        model = fully_connected(model, 1024, 'Full_2')
+
+        # Output
+        return fully_connected(model, self.num_classes, 'Output')
