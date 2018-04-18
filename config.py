@@ -32,5 +32,19 @@ def load_configs():
                         help="The mode to run the program. [supervised, random]")
     parser.add_argument("--log_file", type=str, default=config["standard"]["log_file"],
                         help="File path to log the program's output.")
+    
+    # Model Parameters
+    parser.add_argument("--input_height", type=int, default=int(config["model"]["input_height"]),
+                        help="Integer value of the height of the input data.")
+    parser.add_argument("--input_width", type=int, default=int(config["model"]["input_width"]),
+                        help="Integer value of the width of the input data.")
+    parser.add_argument("--input_channels", type=int, default=int(config["model"]["input_channels"]),
+                        help="Integer value of the number of channels in the input data.")
+    parser.add_argument("--num_classes", type=int, default=int(config["model"]["num_classes"]),
+                        help="Integer value of the number of classes in the dataset.")
+    parser.add_argument("--bayesian", action="store_true", default=config["model"]["bayesian"] == "True",
+                        help="Boolean if the model should use MCdropout to simulate bayesian uncertainty.")
+    parser.add_argument("--model_path", type=str, default=config["model"]["model_path"],
+                        help="File path where the models weights shall be saved and loaded.")
 
     return parser.parse_args()
