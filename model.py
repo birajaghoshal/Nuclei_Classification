@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow.contrib.layers as layers
 
 
 class Model:
@@ -21,8 +22,8 @@ class Model:
         self.Y = tf.placeholder("float", [None, self.num_classes], name='Y')
 
         # Creates the classification model
-        self.model = "model"
-        self.log('Classification Model has been created\n')
+        self.model = self.create_model()
+        self.log("Classification Model has been created\n")
 
     def __copy__(self):
         """ Resets the model and returns a copy of the model.
@@ -41,3 +42,19 @@ class Model:
             print(message)
         if self.config.log_file != '':
             print(message, file=open(self.config.log_file, 'a'))
+
+    def create_model(self):
+        """ Creates a CNN model for Classification.
+        :return: A computational graph representing a CNN model for Classification.
+        """
+
+        def max_pool(input_tensor, k, d, name):
+            """ Creates a Max Pooling layer for the model
+            :param input_tensor: The tensor for the max pooling layer to use as input.
+            :param k: The size of the filters.
+            :param d: The size of the strides.
+            :param name: The name of the operation.
+            :return: A tensor.
+            """
+
+            return tf.nn.max_pool(input_tensor, ksize=[1, k, k, 1], strides=[1, d, d, 1], padding='VALID', name=name)
