@@ -18,3 +18,13 @@ class DataHandler:
         self.test_per = config.test_per
         self.verbose = config.verbose
         self.config = config
+
+    def log(self, message):
+        """ Function to handle printing and logging of messages.
+        :param message: String of message to be printed and logged.
+        """
+
+        if self.config.verbose:
+            print(message)
+        if self.config.log_file != '':
+            print(message, file=open(self.config.log_file, 'a'))
