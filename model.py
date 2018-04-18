@@ -57,7 +57,7 @@ class Model:
             :return: A tensor.
             """
 
-            return tf.nn.max_pool(input_tensor, ksize=[1, k, k, 1], strides=[1, d, d, 1], padding="VALID", name=name)
+            return tf.nn.max_pool(input_tensor, ksize=[1, k, k, 1], strides=[1, d, d, 1], padding="SAME", name=name)
 
         def convolution(input_tensor, k, d, n_out, name, activation_fn=tf.nn.relu, batch_norm=True):
             """ Creates a Convolutional layer operation.
@@ -80,7 +80,7 @@ class Model:
                 biases = tf.get_variable("bias", [n_out], tf.float32, tf.constant_initializer(0.0))
 
                 # Creates the convolutional tensor operations with the declared weights and biases.
-                conv = tf.nn.conv2d(input_tensor, weights, (1, d, d, 1), padding="VALID")
+                conv = tf.nn.conv2d(input_tensor, weights, (1, d, d, 1), padding="SAME")
                 logits = tf.nn.bias_add(conv, biases)
 
                 # Creates the operation for the activation applied to the logits.
@@ -184,3 +184,42 @@ class Model:
         # Returns both the loss and optimiser operations.
         return loss, optimiser
 
+    def converge_check(self, val_losses, train_losses):
+        """ Checks if the training has converged and should stop training.
+        :param val_losses: A list of the validation losses.
+        :param train_losses: A list of the training losses.
+        :return: A boolean value to whether training should stop.
+        """
+
+        # Checks if the number of epochs is over the maximum.
+        if len(val_losses) >= self.config.max_epochs:
+            return True
+
+        # Checks if the number of epochs is over the minimum.
+        elif len(val_losses) < self.config.min_epochs:
+            return True
+
+        else:
+            # Checks that the epoch is a multiple of the batch_epochs.
+            if len(val_losses) % self.config.batch_epochs == 0:
+                # Calculates the generalised loss from the validation losses.
+                g_loss = 100 * ((val_losses[-1] / min(val_losses[:-1])) - 1)
+
+                # Calculates the training progress from the last batch.
+                t_progress = 1000 * ((sum(train_losses[-self.config.batch_epochs - 1:-1]) /
+                                      (self.config.batch_epochs *
+                                       min(train_losses[-self.config.batch_epochs - 1:-1]))) -1)
+
+                # Displays the current training progress if verbose.
+                message = "Generalised Loss: {:.3f} ".format(g_loss)
+                message += "Training Progress: {:.3f} ".format(t_progress)
+                message += "Training Score: {:.4f}".format(g_loss / t_progress)
+                self.log(message)
+
+                # Compares score to threshold to decide if training should stop.
+                if abs(g_loss / t_progress) > self.config.threshold:
+                    return True
+                else:
+                    return False
+            else:
+                return False
