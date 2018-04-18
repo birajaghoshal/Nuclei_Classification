@@ -122,3 +122,11 @@ class Model:
                 else:
                     return activations
 
+        def linear(input):
+            """ Linear activation function.
+            :param input: Input Tensor.
+            :return: The same Input tensor.
+            """
+
+            return input
+
