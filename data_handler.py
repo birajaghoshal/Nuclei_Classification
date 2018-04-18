@@ -19,8 +19,11 @@ class DataHandler:
         self.verbose = config.verbose
         self.config = config
 
+        # Loads the training data into the unannotated data stores.
+        self.load_training_data(config.data_dir)
+
     def log(self, message):
-        """ Function to handle printing and logging of messages.
+        """ Method to handle printing and logging of messages.
         :param message: String of message to be printed and logged.
         """
 
@@ -28,3 +31,8 @@ class DataHandler:
             print(message)
         if self.config.log_file != '':
             print(message, file=open(self.config.log_file, 'a'))
+
+    def load_training_data(self, data_dir):
+        values = np.load(data_dir + "values.npy")
+        self.data_x = values[0]
+        self.data_y = values[1]
