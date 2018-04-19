@@ -13,6 +13,7 @@ def create_training_data(in_dir, out_dir, patch_size):
     start = int(sorted(os.listdir(in_dir))[0].replace("img", ""))
 
     patch_files, classifications = [], []
+    os.makedirs(out_dir)
     
     for img_num in range(start, start + len(os.listdir(in_dir))):
         image = cv2.imread(in_dir + "img" + str(img_num) + "/img" + str(img_num) + ".bmp")
@@ -24,8 +25,8 @@ def create_training_data(in_dir, out_dir, patch_size):
         other = io.loadmat(in_dir + "img" + str(img_num) + "/img" + str(img_num) + "_others.mat")["detection"]
         points = [epi, fib, inf, other]
 
-        for pi in range(border_size, image.shape[0] + border_size, patch_size):
-            for pj in range(border_size, image.shape[1] + border_size, patch_size):
+        for pi in range(border_size, image.shape[0] + border_size, 1):
+            for pj in range(border_size, image.shape[1] + border_size, 1):
                 min_dist = 1000
                 label = -1
                 for i in range(len(points)):
