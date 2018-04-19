@@ -1,4 +1,6 @@
+import random
 import numpy as np
+from collections import Counter
 
 
 class DataHandler:
@@ -21,6 +23,7 @@ class DataHandler:
 
         # Loads the training data into the unannotated data stores.
         self.load_training_data(config.data_dir)
+        self.load_testing_data(config.data_dir)
 
     def log(self, message):
         """ Method to handle printing and logging of messages.
@@ -33,7 +36,7 @@ class DataHandler:
             print(message, file=open(self.config.log_file, 'a'))
 
     def load_training_data(self, data_dir):
-        values = np.load(data_dir + "values.npy")
+        values = np.load(data_dir + "Training/values.npy")
         self.data_x = values[0]
         self.data_y = values[1]
 
@@ -42,6 +45,23 @@ class DataHandler:
         self.test_x = values[0]
         self.test_y = values[1]
 
+    def set_training_data(self, indices):
+        """ Sets data from the unlabelled data to the training set.
+        :param indices: A list of indices to be moved from unlabelled to training.
+        """
+
+        temp_x, temp_y = [], []
+        for index in sorted(indices, reverse=True):
+            temp_x += self.data_x[index]
+            temp_y += self.data_y[index]
+            del self.data_x[index]
+            del self.data_y[index]
+
+        num_val = int(len(temp_y) * self.val_per)
+        val_x, val_y = zip(*random.sample(list(zip(temp_x, temp_y)), num_val))
+        if self.config.combine.lower() == 'add':
+            self.val_x += val_x
+            self.val_y += val_y
         elif self.config.combine.lower() == 'replace':
             self.val_x = val_x
             self.val_y = val_y
