@@ -7,7 +7,7 @@ from collections import Counter
 from scipy.spatial import distance
 
 
-def create_training_data(in_dir, out_dir, patch_size):
+def create_training_data(in_dir, out_dir, patch_size, stride):
     patch_count = 0
     border_size = patch_size // 2
     start = int(sorted(os.listdir(in_dir))[0].replace("img", ""))
@@ -25,8 +25,8 @@ def create_training_data(in_dir, out_dir, patch_size):
         other = io.loadmat(in_dir + "img" + str(img_num) + "/img" + str(img_num) + "_others.mat")["detection"]
         points = [epi, fib, inf, other]
 
-        for pi in range(border_size, image.shape[0] + border_size, 1):
-            for pj in range(border_size, image.shape[1] + border_size, 1):
+        for pi in range(border_size, image.shape[0] + border_size, stride):
+            for pj in range(border_size, image.shape[1] + border_size, stride):
                 min_dist = 1000
                 label = -1
                 for i in range(len(points)):
@@ -67,4 +67,4 @@ if __name__ == "__main__":
         out_dir += '/'
 
     if sys.argv[1].lower() == 'train':
-        create_training_data(in_dir, out_dir, int(sys.argv[4]))
+        create_training_data(in_dir, out_dir, int(sys.argv[4]), int(sys.argv[5]))
