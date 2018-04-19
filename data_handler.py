@@ -17,7 +17,6 @@ class DataHandler:
 
         # Sets the class members.
         self.val_per = config.val_per
-        self.test_per = config.test_per
         self.verbose = config.verbose
         self.config = config
 
