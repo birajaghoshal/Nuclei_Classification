@@ -35,7 +35,7 @@ def create_training_data(in_dir, out_dir, patch_size, stride):
                         if dist < min_dist:
                             min_dist = dist
                             label = i
-                if min_dist >= 6:
+                if min_dist >= 5:
                     continue
                 patch = border_image[pj - border_size:pj + border_size + 1, pi - border_size:pi + border_size + 1]
                 patches = [patch]

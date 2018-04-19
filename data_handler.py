@@ -68,4 +68,40 @@ class DataHandler:
         x_list = np.array([i for j, i in enumerate(x_list) if j not in indices])
         y_list = np.array([i for j, i in enumerate(y_list) if j not in indices])
         return x_list, y_list
-        
+
+    def set_training_data(self, indices):
+        """ Sets data from the unlabelled data to the training set.
+        :param indices: A list of indices to be moved from unlabelled to training.
+        """
+
+        # Sets temparary lists to the data to be added.
+        temp_x = np.array([i for j, i in enumerate(self.data_x) if j in indices])
+        temp_y = np.array([i for j, i in enumerate(self.data_y) if j in indices])
+
+        # Removes the data from the unannotated list.
+        self.data_x = np.array([i for j, i in enumerate(self.data_x) if j not in indices])
+        self.data_y = np.array([i for j, i in enumerate(self.data_y) if j not in indices])
+
+        if self.config.balance:
+            temp_x, temp_y = self.balance(temp_x, temp_y)
+
+        num_val = int(len(temp_y) * self.val_per)
+        val_x, val_y = zip(*random.sample(list(zip(temp_x, temp_y)), num_val))
+        sort_idx = np.asarray(temp_x).argsort()
+        indices = sort_idx[np.searchsorted(np.asarray(temp_x), np.asarray(val_x), sorter=sort_idx)].tolist()
+        temp_x = np.delete(temp_x, indices)
+        temp_y = np.delete(temp_y, indices)
+        if self.config.combine.lower() == 'add':
+            self.val_x = np.append(self.val_x, val_x)
+            self.val_y = np.append(self.val_y, val_y)
+            self.train_x = np.append(self.train_x, temp_x)
+            self.train_y = np.append(self.train_y, temp_y)
+        elif self.config.combine.lower() == 'replace':
+            self.val_x = val_x
+            self.val_y = val_y
+            self.train_x = temp_x
+            self.train_y = temp_y
+
+        self.class_weights = list(Counter(self.train_y).values())
+        self.log('Training Patches: ' + str(len(self.train_y)))
+        self.log('Validation Patches: ' + str(len(self.val_y)))

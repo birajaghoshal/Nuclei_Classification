@@ -19,3 +19,4 @@ if __name__ == "__main__":
     model = Model(config)
     data = DataHandler(config)
     data.set_training_data(list(range(len(data.data_y))))
+    pass
