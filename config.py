@@ -39,8 +39,6 @@ def load_configs():
                         help="Directory path to dataset used to train the model.")
     parser.add_argument("--val_per", type=float, default=float(config["data"]["val_per"]),
                         help="Float to represent the validation percentage.")
-    parser.add_argument("--test_per", type=float, default=float(config["data"]["test_per"]),
-                        help="Float to represent the testing percentage.")
     parser.add_argument("--balance", action="store_true",
                         default=config["data"]["balance"].lower() == "true",
                         help="Boolean if the data should be down-sampled to balance the classes.")
