@@ -36,3 +36,51 @@ class DataHandler:
         values = np.load(data_dir + "values.npy")
         self.data_x = values[0]
         self.data_y = values[1]
+
+    def load_testing_data(self, data_dir):
+        values = np.load(data_dir + "Testing/values.npy")
+        self.test_x = values[0]
+        self.test_y = values[1]
+
+        elif self.config.combine.lower() == 'replace':
+            self.val_x = val_x
+            self.val_y = val_y
+
+        # indices = [j for j, i in enumerate(temp_x) if i in val_x]
+        sort_idx = np.asarray(temp_x).argsort()
+        indices = sort_idx[np.searchsorted(np.asarray(temp_x), np.asarray(val_x), sorter=sort_idx)].tolist()
+
+        temp_x = np.delete(temp_x, indices).tolist()
+        temp_y = np.delete(temp_y, indices).tolist()
+
+        if self.config.balance:
+            balance = Counter(temp_y)
+            if balance[0] > balance[1]:
+                # Gets the number of patches to remove.
+                number = balance[0] - balance[1]
+
+                # Randomly selects patches to be removed.
+                indices = np.random.permutation([i for i, j in enumerate(temp_y) if j == 0])[:number]
+
+            elif balance[0] < balance[1]:
+                # Gets the number of patches to remove.
+                number = balance[1] - balance[0]
+
+                # Randomly selects patches to be removed.
+                indices = np.random.permutation([i for i, j in enumerate(temp_y) if j == 1])[:number]
+
+            temp_x = [i for j, i in enumerate(temp_x) if j not in indices]
+            temp_y = [i for j, i in enumerate(temp_y) if j not in indices]
+            temp_y = [i for j, i in enumerate(temp_y) if j not in indices]
+
+        if self.config.combine.lower() == 'add':
+            self.train_x += temp_x
+            self.train_y += temp_y
+        elif self.config.combine.lower() == 'replace':
+            self.train_y = temp_y
+
+        counter = list(Counter(self.train_y).items())
+        self.class_weights = [m[1] for m in counter if True]
+
+        self.log('Training Patches: ' + str(len(self.train_y)))
+        self.log('Validation Patches: ' + str(len(self.val_y)))
