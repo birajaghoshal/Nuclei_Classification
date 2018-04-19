@@ -35,71 +35,37 @@ class DataHandler:
             print(message, file=open(self.config.log_file, 'a'))
 
     def load_training_data(self, data_dir):
+        """ Loads the training data to the unannotated lists.
+        :param data_dir: The data directory.
+        """
+
         values = np.load(data_dir + "Training/values.npy")
         self.data_x = values[0]
         self.data_y = values[1]
 
     def load_testing_data(self, data_dir):
+        """ Loads the testing data to the testing data lists.
+        :param data_dir: The data directory.
+        """
+
         values = np.load(data_dir + "Testing/values.npy")
         self.test_x = values[0]
         self.test_y = values[1]
 
-    def set_training_data(self, indices):
-        """ Sets data from the unlabelled data to the training set.
-        :param indices: A list of indices to be moved from unlabelled to training.
+    def balance(self, x_list, y_list):
+        """ A method to balance a set of data.
+        :param x_list: A list of data.
+        :param y_list: A list of labels.
+        :return: balanced x and y lists.
         """
-
-        temp_x, temp_y = [], []
-        for index in sorted(indices, reverse=True):
-            temp_x += self.data_x[index]
-            temp_y += self.data_y[index]
-            del self.data_x[index]
-            del self.data_y[index]
-
-        num_val = int(len(temp_y) * self.val_per)
-        val_x, val_y = zip(*random.sample(list(zip(temp_x, temp_y)), num_val))
-        if self.config.combine.lower() == 'add':
-            self.val_x += val_x
-            self.val_y += val_y
-        elif self.config.combine.lower() == 'replace':
-            self.val_x = val_x
-            self.val_y = val_y
-
-        # indices = [j for j, i in enumerate(temp_x) if i in val_x]
-        sort_idx = np.asarray(temp_x).argsort()
-        indices = sort_idx[np.searchsorted(np.asarray(temp_x), np.asarray(val_x), sorter=sort_idx)].tolist()
-
-        temp_x = np.delete(temp_x, indices).tolist()
-        temp_y = np.delete(temp_y, indices).tolist()
-
-        if self.config.balance:
-            balance = Counter(temp_y)
-            if balance[0] > balance[1]:
-                # Gets the number of patches to remove.
-                number = balance[0] - balance[1]
-
-                # Randomly selects patches to be removed.
-                indices = np.random.permutation([i for i, j in enumerate(temp_y) if j == 0])[:number]
-
-            elif balance[0] < balance[1]:
-                # Gets the number of patches to remove.
-                number = balance[1] - balance[0]
-
-                # Randomly selects patches to be removed.
-                indices = np.random.permutation([i for i, j in enumerate(temp_y) if j == 1])[:number]
-
-            temp_x = [i for j, i in enumerate(temp_x) if j not in indices]
-            temp_y = [i for j, i in enumerate(temp_y) if j not in indices]
-            temp_y = [i for j, i in enumerate(temp_y) if j not in indices]
-
-        if self.config.combine.lower() == 'add':
-            self.train_x += temp_x
-            self.train_y += temp_y
-        elif self.config.combine.lower() == 'replace':
-            self.train_y = temp_y
-
-        counter = list(Counter(self.train_y).items())
-        self.class_weights = [m[1] for m in counter if True]
-
-        self.log('Training Patches: ' + str(len(self.train_y)))
-        self.log('Validation Patches: ' + str(len(self.val_y)))
+        balance = Counter(y_list)
+        min_values = min(list(balance.values()))
+        indices = []
+        for c in range(self.config.num_classes):
+            class_values = balance[c]
+            indices.append(np.random.permutation([j for j, i in enumerate(y_list) if i == c])
+                           [:class_values - min_values])
+        x_list = np.array([i for j, i in enumerate(x_list) if j not in indices])
+        y_list = np.array([i for j, i in enumerate(y_list) if j not in indices])
+        return x_list, y_list
+        
