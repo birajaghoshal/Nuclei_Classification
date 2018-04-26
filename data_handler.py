@@ -69,6 +69,33 @@ class DataHandler:
         y_list = np.array([i for j, i in enumerate(y_list) if j not in indices])
         return x_list, y_list
 
+    def all_data(self):
+        """ Sets all data from the unlabelled data to the training set.
+         """
+
+        # Sets the unlabelled data to the training set.
+        self.train_x = self.data_x
+        self.train_y = self.data_y
+        self.data_x = np.array([])
+        self.data_y = np.array([])
+
+        # Balances the training data.
+        if self.config.balance:
+            self.train_x, self.train_y = self.balance(self.train_x, self.train_y)
+
+        # Sets the validation set.
+        num_val = int(len(self.train_y) * self.val_per)
+        self.val_x, self.val_y = zip(*random.sample(list(zip(self.train_x, self.train_y)), num_val))
+        sort_idx = np.asarray(self.train_x).argsort()
+        indices = sort_idx[np.searchsorted(np.asarray(self.train_x), np.asarray(self.val_x), sorter=sort_idx)].tolist()
+        self.train_x = np.delete(self.train_x, indices)
+        self.train_y = np.delete(self.train_y, indices)
+
+        # Logs the number of patches.
+        self.class_weights = list(Counter(self.train_y).values())
+        self.log('Training Patches: ' + str(len(self.train_y)))
+        self.log('Validation Patches: ' + str(len(self.val_y)))
+
     def set_training_data(self, indices):
         """ Sets data from the unlabelled data to the training set.
         :param indices: A list of indices to be moved from unlabelled to training.
@@ -82,15 +109,19 @@ class DataHandler:
         self.data_x = np.array([i for j, i in enumerate(self.data_x) if j not in indices])
         self.data_y = np.array([i for j, i in enumerate(self.data_y) if j not in indices])
 
+        # Balances the data.
         if self.config.balance:
             temp_x, temp_y = self.balance(temp_x, temp_y)
 
+        # Sets the validation data
         num_val = int(len(temp_y) * self.val_per)
         val_x, val_y = zip(*random.sample(list(zip(temp_x, temp_y)), num_val))
         sort_idx = np.asarray(temp_x).argsort()
         indices = sort_idx[np.searchsorted(np.asarray(temp_x), np.asarray(val_x), sorter=sort_idx)].tolist()
         temp_x = np.delete(temp_x, indices)
         temp_y = np.delete(temp_y, indices)
+
+        # Adds the data depending on specified method.
         if self.config.combine.lower() == 'add':
             self.val_x = np.append(self.val_x, val_x)
             self.val_y = np.append(self.val_y, val_y)
@@ -102,6 +133,9 @@ class DataHandler:
             self.train_x = temp_x
             self.train_y = temp_y
 
+        # Logs the number of patches.
         self.class_weights = list(Counter(self.train_y).values())
         self.log('Training Patches: ' + str(len(self.train_y)))
         self.log('Validation Patches: ' + str(len(self.val_y)))
+
+
