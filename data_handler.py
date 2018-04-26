@@ -155,3 +155,40 @@ class DataHandler:
 
         # Returens the image and label.
         return tf.cast(image, 'float'), one_hot_label
+
+    def get_dataset(self, train_batch_size, test_batch_size):
+        """ Produces the dataset objects to be used by the model.
+        :param train_batch_size: The size of the batches for training.
+        :param test_batch_size: The size of the batches for testing and validation.
+        :return: The datasets objects to dynamically load the data.
+        """
+
+        # Training set - Loads the data into tensors
+        #                Sets the input_parser as the operation for loading the data.
+        #                Splits and shuffles the data into batches.
+        train_images = tf.constant(self.train_x)
+        train_labels = tf.constant(self.train_y)
+        train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
+        train_dataset = train_dataset.map(self.input_parser, num_parallel_calls=1000).prefetch(10000)
+        train_dataset = train_dataset.batch(train_batch_size).shuffle(10000)
+
+        # Testing set - Loads the data into tensors
+        #               Sets the input_parser as the operation for loading the data.
+        #               Splits the data into batches.
+        test_images = tf.constant(self.test_x)
+        test_labels = tf.constant(self.test_y)
+        test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
+        test_dataset = test_dataset.map(self.input_parser, num_parallel_calls=1000).prefetch(10000)
+        test_dataset = test_dataset.batch(test_batch_size)
+
+        # Validation set - Loads the data into tensors
+        #                  Sets the input_parser as the operation for loading the data.
+        #                  Splits and shuffles the data into batches.
+        val_images = tf.constant(self.val_x)
+        val_labels = tf.constant(self.val_y)
+        val_dataset = tf.data.Dataset.from_tensor_slices((val_images, val_labels))
+        val_dataset = val_dataset.map(self.input_parser, num_parallel_calls=1000).prefetch(10000)
+        val_dataset = val_dataset.batch(test_batch_size)
+
+        # Returns the dataset objects.
+        return train_dataset, test_dataset, val_dataset
