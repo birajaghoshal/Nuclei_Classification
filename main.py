@@ -1,6 +1,7 @@
 import config
 from model import Model
 from data_handler import DataHandler
+from random_learner import Random
 
 
 def log(config, message):
@@ -16,7 +17,13 @@ def log(config, message):
 
 if __name__ == "__main__":
     config = config.load_configs()
-    model = Model(config)
-    data = DataHandler(config)
-    data.all_data()
-    model.train(data)
+    if config.mode.lower() == 'supervised':
+        model = Model(config)
+        data_handler = DataHandler(config)
+        data_handler.all_data()
+        model.train(data_handler)
+    elif config.mode.lower() == 'random':
+        model = Model(config)
+        data_handler = DataHandler(config)
+        random_learner = Random(data_handler, model, config)
+        random_learner.run()
