@@ -1,3 +1,4 @@
+import time
 import tensorflow as tf
 import tensorflow.contrib.layers as layers
 
@@ -223,3 +224,27 @@ class Model:
                     return False
             else:
                 return False
+
+    def train(self, data):
+        train_data, test_data, val_data = data.get_datasets(self.config.batch_size, 10000)
+        num_train_batches, num_test_batches, num_val_batches = data.get_num_batches(self.config.batch_size, 10000)
+
+        train_iterator = tf.data.Iterator.from_structure(train_data.output_types, train_data.output_shapes)
+        train_next_batch = train_iterator.get_next()
+        train_init_op = train_iterator.make_initializer(train_data)
+
+        test_iterator = tf.data.Iterator.from_structure(test_data.output_types, test_data.output_shapes)
+        test_next_batch = test_iterator.get_next()
+        test_init_op = test_iterator.make_initializer(test_data)
+
+        val_iterator = tf.data.Iterator.from_structure(val_data.output_types, val_data.output_shapes)
+        val_next_batch = val_iterator.get_next()
+        val_init_op = val_iterator.make_initializer(val_data)
+
+        loss_op, optimiser_op = self.optimiser(data.class_weights)
+        init_op = tf.global_variables_initializer()
+        saver = tf.train.Saver()
+
+        val_losses, train_losses = [], []
+
+        start_time = time.clock()

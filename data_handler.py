@@ -168,7 +168,7 @@ class DataHandler:
         # Returens the image and label.
         return tf.cast(image, 'float'), one_hot_label
 
-    def get_dataset(self, train_batch_size, test_batch_size):
+    def get_datasets(self, train_batch_size, test_batch_size):
         """ Produces the dataset objects to be used by the model.
         :param train_batch_size: The size of the batches for training.
         :param test_batch_size: The size of the batches for testing and validation.
