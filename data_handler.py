@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import tensorflow as tf
 from collections import Counter
 
 
@@ -138,4 +139,19 @@ class DataHandler:
         self.log('Training Patches: ' + str(len(self.train_y)))
         self.log('Validation Patches: ' + str(len(self.val_y)))
 
+    def input_parser(self, image_path, label):
+        """ Operation for the parser to dynamically load images in the dataset.
+        :param image_path: THe file path to the image.
+        :param label: The label for the image to be loaded.
+        :return: An operation to load the image and create a one hot label.
+        """
 
+        # Encodes the label as one hot.
+        one_hot_label = tf.one_hot(tf.to_int32(label), self.config.num_classes)
+
+        # Reads and decodes the image file.
+        image_file = tf.read_file(image_path)
+        image = tf.image.decode_image(image_file, channels=self.config.input_channels)
+
+        # Returens the image and label.
+        return tf.cast(image, 'float'), one_hot_label
