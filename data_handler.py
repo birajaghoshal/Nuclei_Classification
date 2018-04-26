@@ -139,6 +139,18 @@ class DataHandler:
         self.log('Training Patches: ' + str(len(self.train_y)))
         self.log('Validation Patches: ' + str(len(self.val_y)))
 
+    def get_num_batches(self, train_batch_size, test_batch_size):
+        """ The the number of the batches for each set of data.
+        :param train_batch_size: The size of the training batches.
+        :param test_batch_size: The size of the testing and validation batches.
+        :return: The number of batches for the training, testing and validation sets.
+        """
+
+        num_train_batches = int(np.ceil(len(self.train_y) / train_batch_size))
+        num_test_batches = int(np.ceil(len(self.test_y) / test_batch_size))
+        num_val_batches = int(np.ceil(len(self.val_y) / test_batch_size))
+        return num_train_batches, num_test_batches, num_val_batches
+
     def input_parser(self, image_path, label):
         """ Operation for the parser to dynamically load images in the dataset.
         :param image_path: THe file path to the image.
