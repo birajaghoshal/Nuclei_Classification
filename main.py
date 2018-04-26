@@ -18,5 +18,5 @@ if __name__ == "__main__":
     config = config.load_configs()
     model = Model(config)
     data = DataHandler(config)
-    data.set_training_data(list(range(len(data.data_y))))
-    pass
+    data.all_data()
+    model.train(data)
