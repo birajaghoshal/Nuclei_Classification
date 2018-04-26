@@ -1,5 +1,8 @@
+import os
 import time
+import numpy as np
 import tensorflow as tf
+import sklearn.metrics as metrics
 import tensorflow.contrib.layers as layers
 
 
@@ -225,26 +228,188 @@ class Model:
             else:
                 return False
 
-    def train(self, data):
+    def train(self, data, test=True):
+        """ The main training loop for the model.
+        :param data: A dataset object.
+        :param test: Boolean if the model should be tested.
+        :return: Training metrics, accuracy, recall, precision, f1-score and loss.
+        """
+
+        # Gets the training, testing and validation dataset objects.
         train_data, test_data, val_data = data.get_datasets(self.config.batch_size, 10000)
+
+        # Gets the number training, testing and validation batches.
         num_train_batches, num_test_batches, num_val_batches = data.get_num_batches(self.config.batch_size, 10000)
 
+        # Sets up the training iterator operations to load the data.
         train_iterator = tf.data.Iterator.from_structure(train_data.output_types, train_data.output_shapes)
         train_next_batch = train_iterator.get_next()
         train_init_op = train_iterator.make_initializer(train_data)
 
-        test_iterator = tf.data.Iterator.from_structure(test_data.output_types, test_data.output_shapes)
-        test_next_batch = test_iterator.get_next()
-        test_init_op = test_iterator.make_initializer(test_data)
+        # Sets up the testing iterator operations to load the data.
+        if test:
+            test_iterator = tf.data.Iterator.from_structure(test_data.output_types, test_data.output_shapes)
+            test_next_batch = test_iterator.get_next()
+            test_init_op = test_iterator.make_initializer(test_data)
 
+        # Sets up the validation iterator operations to load the data.
         val_iterator = tf.data.Iterator.from_structure(val_data.output_types, val_data.output_shapes)
         val_next_batch = val_iterator.get_next()
         val_init_op = val_iterator.make_initializer(val_data)
 
+        # Sets up the loss, optimiser and initiation operations.
         loss_op, optimiser_op = self.optimiser(data.class_weights)
         init_op = tf.global_variables_initializer()
         saver = tf.train.Saver()
 
+        # Creates the lists for the losses to be stored.
         val_losses, train_losses = [], []
 
+        # Gets the start time for the training.
         start_time = time.clock()
+
+        # Creates the session for the computational operations to be run.
+        with tf.Session() as sess:
+            # Runs the variable initialisation.
+            sess.run(init_op)
+
+            # Loads the existing weights to the model.
+            # if self.config.model_tuning and self.config.mode != 'supervised' and os.path.isdir(self.config.model_path):
+            #     saver.restore(sess, self.config.model_path)
+            #     self.log('Model Restored')
+
+            # Checks if the training progress has converged.
+            while self.converge_check(val_losses, train_losses):
+                # Initialises the training data iterator.
+                sess.run(train_init_op)
+                train_loss = 0
+
+                # Loops for each batch in the training data.
+                for step in range(num_train_batches):
+                    # Runs the training batch operation to get a image and label batch.
+                    image_batch, label_batch = sess.run(train_next_batch)
+
+                    # Updates the CNN usiong the optimiser and returns the loss for the batch.
+                    _, loss = sess.run([optimiser_op, loss_op], feed_dict={self.X: image_batch, self.Y: label_batch})
+                    train_loss += np.average(loss)
+
+                # Adds the training loss to the training losses list.
+                train_losses.append(train_loss / num_train_batches)
+
+                # Initialises the training data iterator.
+                sess.run(val_init_op)
+                predicted_labels, labels, val_loss = [], [], 0
+
+                # Sets the number of feed forwards for the validation set.
+                iterations = 10 if self.config.bayesian else 1
+
+                # Loops for each batch in the validation data.
+                for step in range(num_val_batches):
+                    # Runs the validation batch operation to get an image and label batch.
+                    image_batch, label_batch = sess.run(val_next_batch)
+                    temp_loss, temp_y_pred = [], []
+
+                    # Uses the trained CNN to get the loss and predictions for the batch.
+                    for iteration in range(iterations):
+                        t_loss, t_y_pred = sess.run([loss_op, tf.nn.softmax(self.model)],
+                                                    feed_dict={self.X: image_batch, self.Y: label_batch})
+                        temp_loss.append(t_loss)
+                        temp_y_pred.append(t_y_pred)
+
+                    # Calculates the loss and predictions over the number of iterations.
+                    if self.config.bayesian:
+                        loss = np.average(temp_loss)
+                        y_pred = np.var(temp_y_pred, axis=0)
+                    else:
+                        loss = temp_loss[0]
+                        y_pred = temp_y_pred[0]
+
+                    # Adds the labels and predictions to lists.
+                    for i in range(len(label_batch)):
+                        labels.append(label_batch[i])
+                        predicted_labels.append(np.argmax(y_pred[i]))
+                    val_loss += np.average(loss)
+
+                # Computes a confusion matrix.
+                cmat = metrics.confusion_matrix(labels, predicted_labels)
+
+                # Uses the confusion matrix to produce a mean class accuracy.
+                val_acc = np.mean(cmat.diagonal() / cmat.sum(axis=1))
+
+                # Adds the loss to the list of validation losses.
+                val_losses.append(val_loss / num_val_batches)
+
+                # If verbose and at the correct interval displays a messages with all the information.
+                if len(train_losses) % self.config.intervals == 0:
+                    message = 'Epoch: ' + str(len(train_losses)).zfill(4)
+                    message += ' Training Loss: {:.4f}'.format(train_losses[-1])
+                    message += ' Validation Accuracy: {:.4f}'.format(val_acc)
+                    message += ' Validation Loss: {:.4f}'.format(val_losses[-1])
+                    message += ' Time: {:.5f}s'.format(time.clock() - start_time)
+                    self.log(message)
+
+            # Gets the time when the training finished.
+            end_time = time.clock()
+
+            if test:
+                # Saves the model.
+                # if self.config.model_tuning and self.config.mode != 'supervised':
+                #     if not os.path.isdir(self.config.model_path):
+                #         os.makedirs(self.config.model_path)
+                #     saver.save(sess, self.config.model_path)
+                #     self.log('Model Saved')
+
+                # Initialises the testing data iterator.
+                sess.run(test_init_op)
+                predicted_labels, labels, test_loss = [], [], 0
+
+                # Loops for each batch in the testing data.
+                for step in range(num_test_batches):
+                    # Runs the testing batch operation to get a image and label batch.
+                    image_batch, label_batch = sess.run(test_next_batch)
+                    temp_loss, temp_y_pred = [], []
+
+                    # Sets the number of feed forwards for the validation set.
+                    iterations = 10 if self.config.bayesian else 1
+
+                    # Uses the trained CNN to get the loss and predictions for the batch.
+                    for iteration in range(iterations):
+                        t_y_pred, t_loss = sess.run([tf.nn.softmax(self.model), loss_op],
+                                                    feed_dict={self.X: image_batch, self.Y: label_batch})
+                        temp_loss.append(t_loss)
+                        temp_y_pred.append(temp_y_pred)
+
+                    # Calculates the loss and predictions over the number of iterations.
+                    if self.config.bayesian:
+                        loss = np.average(temp_loss)
+                        y_pred = np.var(temp_y_pred, axis=0)
+                    else:
+                        loss = temp_loss[0]
+                        y_pred = temp_y_pred[0]
+
+                    # Adds the labels and predictions to the lists.
+                    for i in range(len(label_batch)):
+                        labels.append(label_batch[i])
+                        predicted_labels.append(np.argmax(y_pred[i]))
+                    test_loss += np.average(loss)
+
+                # Calculates Recall, Precision, F1-Score, Mean Class Accuracy and Loss.
+                recall = metrics.recall_score(labels, predicted_labels)
+                precision = metrics.precision_score(labels, predicted_labels)
+                f1_score = metrics.f1_score(labels, predicted_labels)
+                cmat = metrics.confusion_matrix(labels, predicted_labels)
+                accuracy = np.mean(cmat.diagonal() / cmat.sum(axis=1))
+                loss = test_loss / num_test_batches
+
+                # Prints the calculated testing metrics.
+                message = '\nModel trained with an Accuracy: {:.4f}'.format(accuracy)
+                message += ' Recall: {:.4f}'.format(recall)
+                message += ' Precision: {:.4f}'.format(precision)
+                message += ' F1-Score: {:.4f}'.format(f1_score)
+                message += ' Loss: {:.4f}'.format(loss)
+                message += ' in ' + str(len(train_losses)) + ' epochs'
+                message += ' and {:.5f}s'.format(end_time - start_time)
+                self.log(message)
+
+                # Returns the testing metrics.
+                return accuracy, recall, precision, f1_score, loss
