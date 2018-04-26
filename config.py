@@ -54,7 +54,8 @@ def load_configs():
                         help="Integer value of the number of channels in the input data.")
     parser.add_argument("--num_classes", type=int, default=int(config["model"]["num_classes"]),
                         help="Integer value of the number of classes in the dataset.")
-    parser.add_argument("--bayesian", action="store_true", default=config["model"]["bayesian"] == "True",
+    parser.add_argument("--bayesian", action="store_true",
+                        default=config["model"]["bayesian"].lower() == "true",
                         help="Boolean if the model should use MCdropout to simulate bayesian uncertainty.")
     parser.add_argument("--model_path", type=str, default=config["model"]["model_path"],
                         help="File path where the models weights shall be saved and loaded.")
@@ -88,5 +89,12 @@ def load_configs():
                         help='Integer representing the size of the batches used to train the model.')
     parser.add_argument('--intervals', type=int, default=int(config['training']['intervals']),
                         help='Integer for the number of epochs before logging the training process.')
+
+    # Active Learning Parameters
+    parser.add_argument('--model_tuning', action='store_true',
+                        default=config['active']['model_tuning'].lower() == 'true',
+                        help='Boolean if the model should be fine tuning each iteration.')
+    parser.add_argument('--update_size', type=int, default=int(config['active']['update_size']),
+                        help='Integer representing the number of items to be labelled each update.')
 
     return parser.parse_args()
