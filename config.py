@@ -97,4 +97,8 @@ def load_configs():
     parser.add_argument('--update_size', type=int, default=int(config['active']['update_size']),
                         help='Integer representing the number of items to be labelled each update.')
 
+    # Plotting Parameters
+    parser.add_argument('--plot_dir', type=str, default=config['plotting']['plot_dir'],
+                        help='Directory Path where the plots will be stored.')
+
     return parser.parse_args()
