@@ -64,23 +64,29 @@ def load_configs():
                         default=config["optimiser"]["weighted_loss"].lower() == "true",
                         help="Boolean if the loss should be weighted.")
     parser.add_argument("--learning_rate", type=float, default=float(config["optimiser"]["learning_rate"]),
-                        help="The learning rate for the model.")
+                        help="Floating point value representing the learning rate for the model.")
     parser.add_argument("--decay", type=float, default=float(config["optimiser"]["decay"]),
-                        help="Learning rate decay over each update.")
+                        help="Floating point value representing the learning rate decay over each update.")
     parser.add_argument("--epsilon", type=float, default=float(config["optimiser"]["epsilon"]),
-                        help="Scale the weights learning rate.")
+                        help="Floating point value to scale the weights learning rate.")
     parser.add_argument("--use_locking", action="store_true",
                         default=config["optimiser"]["use_locking"].lower() == "true",
-                        help="If locks should be used for weight updates.")
+                        help="Boolean if locks should be used for weight updates.")
 
     # Converge Checking Parameters
     parser.add_argument("--training_threshold", type=float, default=float(config["converge"]["training_threshold"]),
-                        help="A threshold for the training process usually set between 0.5 and 3.")
+                        help="A floating point value representing the threshold for the training process.")
     parser.add_argument("--max_epochs", type=int, default=int(config["converge"]["max_epochs"]),
-                        help="The maximum epochs training can run for.")
+                        help="Integer representing the maximum number of epochs training can run for.")
     parser.add_argument("--min_epochs", type=int, default=int(config["converge"]["min_epochs"]),
-                        help="The minimum epochs training can run for.")
+                        help="Integer representing the minimum number of epochs training can run for.")
     parser.add_argument("--batch_epochs", type=int, default=int(config["converge"]["batch_epochs"]),
-                        help="The batch size of the training losses to calculate training progress.")
+                        help="Integer representing the batch size of the training losses.")
+
+    # Training Parameters
+    parser.add_argument('--batch_size', type=int, default=int(config['training']['batch_size']),
+                        help='Integer representing the size of the batches used to train the model.')
+    parser.add_argument('--intervals', type=int, default=int(config['training']['intervals']),
+                        help='Integer for the number of epochs before logging the training process.')
 
     return parser.parse_args()
