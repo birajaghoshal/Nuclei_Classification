@@ -72,9 +72,28 @@ class DataHandler:
         y_list = np.array([i for j, i in enumerate(y_list) if j not in indices])
         return x_list, y_list
 
+    def set_validation_set(self):
+        """ Sets the validation set from the training data.
+        """
+        num_val = int((len(self.train_y) / self.config.cell_patches) * self.val_per)
+        indices = []
+        for _ in range(num_val):
+            random_index = random.randint(0, int(len(self.train_y) / num_val))
+            indices += list(range(random_index, random_index + self.config.cell_patches))
+        val_x = np.array([i for j, i in enumerate(self.data_x) if j in indices])
+        val_y = np.array([i for j, i in enumerate(self.data_y) if j in indices])
+        self.data_x = np.delete(self.data_x, indices)
+        self.data_y = np.delete(self.data_y, indices)
+        if self.config.combine.lower() == 'add':
+            self.val_x = np.append(self.val_x, val_x)
+            self.val_y = np.append(self.val_y, val_y)
+        elif self.config.combine.lower() == 'replace':
+            self.val_x = val_x
+            self.val_y = val_y
+
     def all_data(self):
         """ Sets all data from the unlabelled data to the training set.
-         """
+        """
 
         # Sets the unlabelled data to the training set.
         self.train_x = self.data_x
@@ -87,12 +106,7 @@ class DataHandler:
             self.train_x, self.train_y = self.balance(self.train_x, self.train_y)
 
         # Sets the validation set.
-        num_val = int(len(self.train_y) * self.val_per)
-        self.val_x, self.val_y = zip(*random.sample(list(zip(self.train_x, self.train_y)), num_val))
-        sort_idx = np.asarray(self.train_x).argsort()
-        indices = sort_idx[np.searchsorted(np.asarray(self.train_x), np.asarray(self.val_x), sorter=sort_idx)].tolist()
-        self.train_x = np.delete(self.train_x, indices)
-        self.train_y = np.delete(self.train_y, indices)
+        self.set_validation_set()
 
         # Logs the number of patches.
         self.class_weights = list(Counter(self.train_y).values())
@@ -117,22 +131,14 @@ class DataHandler:
             temp_x, temp_y = self.balance(temp_x, temp_y)
 
         # Sets the validation data
-        num_val = int(len(temp_y) * self.val_per)
-        val_x, val_y = zip(*random.sample(list(zip(temp_x, temp_y)), num_val))
-        sort_idx = np.asarray(temp_x).argsort()
-        indices = sort_idx[np.searchsorted(np.asarray(temp_x), np.asarray(val_x), sorter=sort_idx)].tolist()
         temp_x = np.delete(temp_x, indices)
         temp_y = np.delete(temp_y, indices)
 
         # Adds the data depending on specified method.
         if self.config.combine.lower() == 'add':
-            self.val_x = np.append(self.val_x, val_x)
-            self.val_y = np.append(self.val_y, val_y)
             self.train_x = np.append(self.train_x, temp_x)
             self.train_y = np.append(self.train_y, temp_y)
         elif self.config.combine.lower() == 'replace':
-            self.val_x = val_x
-            self.val_y = val_y
             self.train_x = temp_x
             self.train_y = temp_y
 
