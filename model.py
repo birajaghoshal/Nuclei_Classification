@@ -138,17 +138,25 @@ class Model:
         model = convolution(self.X, 3, 1, 64, "Conv_1.1")
         model = convolution(model, 3, 1, 64, "Conv_1.2")
         model = max_pool(model, 2, 2, "Pool_1.1")
+        if self.config.bayesian:
+            model = tf.nn.dropout(model, 0.2)
 
         # Block 2
         model = convolution(model, 3, 1, 128, "Conv_2.1")
         model = convolution(model, 3, 1, 128, "Conv_2.2")
         model = max_pool(model, 2, 2, "Pool_2.1")
+        model = max_pool(model, 2, 2, "Pool_1.1")
+        if self.config.bayesian:
+            model = tf.nn.dropout(model, 0.2)
 
         # Block 3
         model = convolution(model, 3, 1, 256, "Conv_3.1")
         model = convolution(model, 3, 1, 256, "Conv_3.2")
         model = convolution(model, 3, 1, 256, "Conv_3.3")
         model = max_pool(model, 2, 2, "Pool_3.1")
+        model = max_pool(model, 2, 2, "Pool_1.1")
+        if self.config.bayesian:
+            model = tf.nn.dropout(model, 0.2)
 
         # Block 4
         model = tf.contrib.layers.flatten(model)
@@ -167,7 +175,7 @@ class Model:
         # Creates the loss operation with the output of the model and the labels.
         if self.config.weighted_loss:
             # Creates a tensor with the weights.
-            weights = tf.constant(weights, dtype=tf.float32)
+            weights = tf.nn.softmax(tf.constant(weights, dtype=tf.float32))
 
             # Multiplies the logits with the weights.
             logits = tf.multiply(self.model, weights)
@@ -201,7 +209,7 @@ class Model:
 
         # Checks if the number of epochs is over the minimum.
         elif len(val_losses) < self.config.min_epochs:
-            return True
+            return False
 
         else:
             # Checks that the epoch is a multiple of the batch_epochs.
@@ -221,7 +229,7 @@ class Model:
                 self.log(message)
 
                 # Compares score to threshold to decide if training should stop.
-                if abs(g_loss / t_progress) > self.config.threshold:
+                if abs(g_loss / t_progress) > self.config.training_threshold:
                     return True
                 else:
                     return False
@@ -232,14 +240,14 @@ class Model:
         """ The main training loop for the model.
         :param data: A dataset object.
         :param test: Boolean if the model should be tested.
-        :return: Training metrics, accuracy, recall, precision, f1-score and loss.
+        :return: Training metrics, accuracy, mean class accuray, recall, precision, f1-score and loss.
         """
 
         # Gets the training, testing and validation dataset objects.
-        train_data, test_data, val_data = data.get_datasets(self.config.batch_size, 10000)
+        train_data, test_data, val_data = data.get_datasets(self.config.batch_size, 1000)
 
         # Gets the number training, testing and validation batches.
-        num_train_batches, num_test_batches, num_val_batches = data.get_num_batches(self.config.batch_size, 10000)
+        num_train_batches, num_test_batches, num_val_batches = data.get_num_batches(self.config.batch_size, 1000)
 
         # Sets up the training iterator operations to load the data.
         train_iterator = tf.data.Iterator.from_structure(train_data.output_types, train_data.output_shapes)
@@ -279,7 +287,7 @@ class Model:
             #     self.log('Model Restored')
 
             # Checks if the training progress has converged.
-            while self.converge_check(val_losses, train_losses):
+            while not self.converge_check(val_losses, train_losses):
                 # Initialises the training data iterator.
                 sess.run(train_init_op)
                 train_loss = 0
@@ -325,8 +333,8 @@ class Model:
                         y_pred = temp_y_pred[0]
 
                     # Adds the labels and predictions to lists.
-                    for i in range(len(label_batch)):
-                        labels.append(label_batch[i])
+                    for i in range(len(label_batch) - 1):
+                        labels.append(np.argmax(label_batch[i]))
                         predicted_labels.append(np.argmax(y_pred[i]))
                     val_loss += np.average(loss)
 
@@ -377,7 +385,7 @@ class Model:
                         t_y_pred, t_loss = sess.run([tf.nn.softmax(self.model), loss_op],
                                                     feed_dict={self.X: image_batch, self.Y: label_batch})
                         temp_loss.append(t_loss)
-                        temp_y_pred.append(temp_y_pred)
+                        temp_y_pred.append(t_y_pred)
 
                     # Calculates the loss and predictions over the number of iterations.
                     if self.config.bayesian:
@@ -388,21 +396,23 @@ class Model:
                         y_pred = temp_y_pred[0]
 
                     # Adds the labels and predictions to the lists.
-                    for i in range(len(label_batch)):
-                        labels.append(label_batch[i])
+                    for i in range(len(label_batch) - 1):
+                        labels.append(np.argmax(label_batch[i]))
                         predicted_labels.append(np.argmax(y_pred[i]))
                     test_loss += np.average(loss)
 
                 # Calculates Recall, Precision, F1-Score, Mean Class Accuracy and Loss.
-                recall = metrics.recall_score(labels, predicted_labels)
-                precision = metrics.precision_score(labels, predicted_labels)
-                f1_score = metrics.f1_score(labels, predicted_labels)
+                recall = metrics.recall_score(labels, predicted_labels, average='micro')
+                precision = metrics.precision_score(labels, predicted_labels, average='micro')
+                f1_score = metrics.f1_score(labels, predicted_labels, average='micro')
                 cmat = metrics.confusion_matrix(labels, predicted_labels)
                 accuracy = np.mean(cmat.diagonal() / cmat.sum(axis=1))
+                accuracy_score = metrics.accuracy_score(labels, predicted_labels)
                 loss = test_loss / num_test_batches
 
                 # Prints the calculated testing metrics.
-                message = '\nModel trained with an Accuracy: {:.4f}'.format(accuracy)
+                message = '\nModel trained with an Accuracy: {:.4f}'.format(accuracy_score)
+                message += ' Mean Class Accuracy: {:.4f}'.format(accuracy)
                 message += ' Recall: {:.4f}'.format(recall)
                 message += ' Precision: {:.4f}'.format(precision)
                 message += ' F1-Score: {:.4f}'.format(f1_score)
@@ -412,4 +422,4 @@ class Model:
                 self.log(message)
 
                 # Returns the testing metrics.
-                return accuracy, recall, precision, f1_score, loss
+                return accuracy_score, accuracy, recall, precision, f1_score, loss
