@@ -43,7 +43,9 @@ def load_configs():
                         default=config["data"]["balance"].lower() == "true",
                         help="Boolean if the data should be down-sampled to balance the classes.")
     parser.add_argument("--combine", type=str, default=config["data"]["combine"],
-                        help="<Method on how to combine the new data to the existing data. [add or replace]")
+                        help="Method on how to combine the new data to the existing data. [add or replace]")
+    parser.add_argument("--cell_patches", type=int, default=config["data"]["cell_patches"],
+                        help="Integer for the number of patches for each cell.")
     
     # Model Parameters
     parser.add_argument("--input_height", type=int, default=int(config["model"]["input_height"]),
