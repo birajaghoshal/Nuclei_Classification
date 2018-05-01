@@ -42,7 +42,8 @@ class DataHandler:
 
         values = np.load(data_dir + "Training/values.npy")
         self.data_x = values[0]
-        self.data_y = values[1]
+        self.data_x = [data_dir + "Training/" + i for i in self.data_x]
+        self.data_y = values[1].astype(int)
 
     def load_testing_data(self, data_dir):
         """ Loads the testing data to the testing data lists.
@@ -51,7 +52,8 @@ class DataHandler:
 
         values = np.load(data_dir + "Testing/values.npy")
         self.test_x = values[0]
-        self.test_y = values[1]
+        self.test_x = [data_dir + "Testing/" + i for i in self.test_x]
+        self.test_y = values[1].astype(int)
 
     def balance(self, x_list, y_list):
         """ A method to balance a set of data.
@@ -181,8 +183,8 @@ class DataHandler:
         train_images = tf.constant(self.train_x)
         train_labels = tf.constant(self.train_y)
         train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
-        train_dataset = train_dataset.map(self.input_parser, num_parallel_calls=1000).prefetch(10000)
-        train_dataset = train_dataset.batch(train_batch_size).shuffle(10000)
+        train_dataset = train_dataset.map(self.input_parser, num_parallel_calls=1000).prefetch(1000)
+        train_dataset = train_dataset.batch(train_batch_size).shuffle(1000)
 
         # Testing set - Loads the data into tensors
         #               Sets the input_parser as the operation for loading the data.
@@ -190,7 +192,7 @@ class DataHandler:
         test_images = tf.constant(self.test_x)
         test_labels = tf.constant(self.test_y)
         test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
-        test_dataset = test_dataset.map(self.input_parser, num_parallel_calls=1000).prefetch(10000)
+        test_dataset = test_dataset.map(self.input_parser, num_parallel_calls=1000).prefetch(1000)
         test_dataset = test_dataset.batch(test_batch_size)
 
         # Validation set - Loads the data into tensors
@@ -199,7 +201,7 @@ class DataHandler:
         val_images = tf.constant(self.val_x)
         val_labels = tf.constant(self.val_y)
         val_dataset = tf.data.Dataset.from_tensor_slices((val_images, val_labels))
-        val_dataset = val_dataset.map(self.input_parser, num_parallel_calls=1000).prefetch(10000)
+        val_dataset = val_dataset.map(self.input_parser, num_parallel_calls=1000).prefetch(1000)
         val_dataset = val_dataset.batch(test_batch_size)
 
         # Returns the dataset objects.
