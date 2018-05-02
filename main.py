@@ -1,8 +1,9 @@
 import config
 from model import Model
 import matplotlib.pyplot as plt
-from random_learner import RandomLearner
 from data_handler import DataHandler
+from random_learner import RandomLearner
+from uncertainty_learner import UncertaintyLearner
 
 
 def log(config, message):
@@ -47,6 +48,8 @@ if __name__ == "__main__":
 
         if config.mode.lower() == 'random':
             learner = RandomLearner(data_handler, model, config)
+        if config.mode.lower() == 'uncertainty':
+            learner = UncertaintyLearner(data_handler, model, config)
 
         accuracies, mean_accuracies, recalls, precisions, f1_scores, losses = learner.run()
 
