@@ -423,3 +423,34 @@ class Model:
 
                 # Returns the testing metrics.
                 return accuracy_score, accuracy, recall, precision, f1_score, loss
+
+    def predict(self, data):
+        """
+        :param data:
+        :return:
+        """
+
+        predictions = []
+        prediction_data = data.get_prediction_datasets(1000)
+        iterator = tf.data.Iterator.from_structure(prediction_data.output_types, prediction_data.output_shapes)
+        next_batch = iterator.get_next()
+        batches = data.get_num_prediction_batches(1000)
+        data_init_op = iterator.make_initializer(prediction_data)
+
+        init = tf.global_variables_initializer()
+        saver = tf.train.Saver()
+
+        with tf.Session() as sess:
+            sess.run(init)
+            if os.path.isdir(self.config.model_path):
+                saver.restore(sess, self.config.model_path)
+                self.log('Model Restored')
+            sess.run(data_init_op)
+            iterations = 10 if self.config.bayesian else 1
+            for step in range(batches):
+                temp = []
+                image_batch = sess.run(next_batch)
+                for iteration in range(iterations):
+                    temp.append(sess.run(tf.nn.softmax(self.model), feed_dict={self.X: image_batch}).tolist())
+                predictions += np.var(temp, axis=0)
+        return predictions
