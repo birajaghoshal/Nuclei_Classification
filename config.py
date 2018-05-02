@@ -87,20 +87,25 @@ def load_configs():
                         help="Integer representing the batch size of the training losses.")
 
     # Training Parameters
-    parser.add_argument('--batch_size', type=int, default=int(config['training']['batch_size']),
-                        help='Integer representing the size of the batches used to train the model.')
-    parser.add_argument('--intervals', type=int, default=int(config['training']['intervals']),
-                        help='Integer for the number of epochs before logging the training process.')
+    parser.add_argument("--batch_size", type=int, default=int(config["training"]["batch_size"]),
+                        help="Integer representing the size of the batches used to train the model.")
+    parser.add_argument("--intervals", type=int, default=int(config["training"]["intervals"]),
+                        help="Integer for the number of epochs before logging the training process.")
 
     # Active Learning Parameters
-    parser.add_argument('--model_tuning', action='store_true',
-                        default=config['active']['model_tuning'].lower() == 'true',
-                        help='Boolean if the model should be fine tuning each iteration.')
-    parser.add_argument('--update_size', type=int, default=int(config['active']['update_size']),
-                        help='Integer representing the number of items to be labelled each update.')
+    parser.add_argument("--model_tuning", action="store_true",
+                        default=config["active"]["model_tuning"].lower() == "true",
+                        help="Boolean if the model should be fine tuning each iteration.")
+    parser.add_argument("--update_size", type=int, default=int(config["active"]["update_size"]),
+                        help="Integer representing the number of items to be labelled each update.")
+    parser.add_argument("--pseudo_labels", action="store_true",
+                        default=config["active"]["pseudo_labels"].lower() == "true",
+                        help="Boolean if the model should use pseudo labels to train with.")
+    parser.add_argument("--pseudo_threshold", type=float, default=float(config["active"]["pseudo_threshold"]),
+                        help="Floating point value representing the threshold for adding pseudo labels.")
 
     # Plotting Parameters
-    parser.add_argument('--plot_dir', type=str, default=config['plotting']['plot_dir'],
-                        help='Directory Path where the plots will be stored.')
+    parser.add_argument("--plot_dir", type=str, default=config["plotting"]["plot_dir"],
+                        help="Directory Path where the plots will be stored.")
 
     return parser.parse_args()
