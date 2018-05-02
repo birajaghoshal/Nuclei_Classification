@@ -61,6 +61,8 @@ class DataHandler:
         :param y_list: A list of labels.
         :return: balanced x and y lists.
         """
+
+        # TODO - make this work with cell patches
         balance = Counter(y_list)
         min_values = min(list(balance.values()))
         indices = []
@@ -75,6 +77,7 @@ class DataHandler:
     def set_validation_set(self):
         """ Sets the validation set from the training data.
         """
+
         num_val = int((len(self.train_y) / self.config.cell_patches) * self.val_per)
         indices = []
         for _ in range(num_val):
@@ -118,21 +121,23 @@ class DataHandler:
         :param indices: A list of indices to be moved from unlabelled to training.
         """
 
+        full_indices = []
+        for index in indices:
+            full_indices.append(list(range(index, index + self.config.cell_patches)))
+
+
+
         # Sets temparary lists to the data to be added.
-        temp_x = np.array([i for j, i in enumerate(self.data_x) if j in indices])
-        temp_y = np.array([i for j, i in enumerate(self.data_y) if j in indices])
+        temp_x = np.array([i for j, i in enumerate(self.data_x) if j in full_indices])
+        temp_y = np.array([i for j, i in enumerate(self.data_y) if j in full_indices])
 
         # Removes the data from the unannotated list.
-        self.data_x = np.array([i for j, i in enumerate(self.data_x) if j not in indices])
-        self.data_y = np.array([i for j, i in enumerate(self.data_y) if j not in indices])
+        self.data_x = np.array([i for j, i in enumerate(self.data_x) if j not in full_indices])
+        self.data_y = np.array([i for j, i in enumerate(self.data_y) if j not in full_indices])
 
         # Balances the data.
         if self.config.balance:
             temp_x, temp_y = self.balance(temp_x, temp_y)
-
-        # Sets the validation data
-        temp_x = np.delete(temp_x, indices)
-        temp_y = np.delete(temp_y, indices)
 
         # Adds the data depending on specified method.
         if self.config.combine.lower() == 'add':
@@ -141,6 +146,9 @@ class DataHandler:
         elif self.config.combine.lower() == 'replace':
             self.train_x = temp_x
             self.train_y = temp_y
+
+        # Sets the validation data.
+        self.set_validation_set()
 
         # Logs the number of patches.
         self.class_weights = list(Counter(self.train_y).values())

@@ -29,7 +29,8 @@ class Random(ActiveLearner):
             losses.append(loss)
 
             # Randomly adds data to the training data.
-            self.data.set_training_data(random.sample(list(range(len(self.data.data_y))), self.config.update_size))
+            self.data.set_training_data(random.sample(list(range(len(self.data.data_y) / self.config.cell_patches)),
+                                                      self.config.update_size))
             self.log('\n\n')
 
         # Trains the model with all the data.
