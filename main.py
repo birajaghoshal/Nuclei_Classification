@@ -51,7 +51,7 @@ if __name__ == "__main__":
         accuracies, mean_accuracies, recalls, precisions, f1_scores, losses = learner.run()
 
         plotting(config.mode + '_accuracy', accuracies, config.update_size)
-        plotting(config.mode + '_mean_class_accuracy', mean_accuracies)
+        plotting(config.mode + '_mean_class_accuracy', mean_accuracies, config.update_size)
         plotting(config.mode + '_recall', recalls, config.update_size)
         plotting(config.mode + '_precision', precisions, config.update_size)
         plotting(config.mode + '_f1-score', f1_scores, config.update_size)

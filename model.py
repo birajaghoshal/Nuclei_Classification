@@ -282,9 +282,9 @@ class Model:
             sess.run(init_op)
 
             # Loads the existing weights to the model.
-            # if self.config.model_tuning and self.config.mode != 'supervised' and os.path.isdir(self.config.model_path):
-            #     saver.restore(sess, self.config.model_path)
-            #     self.log('Model Restored')
+            if self.config.model_tuning and self.config.mode != 'supervised' and os.path.isdir(self.config.model_path):
+                saver.restore(sess, self.config.model_path)
+                self.log('Model Restored')
 
             # Checks if the training progress has converged.
             while not self.converge_check(val_losses, train_losses):
@@ -333,9 +333,9 @@ class Model:
                         y_pred = temp_y_pred[0]
 
                     # Adds the labels and predictions to lists.
-                    for i in range(len(label_batch) - 1):
+                    for i in range(0, len(label_batch) - 1, self.config.cell_patches):
                         labels.append(np.argmax(label_batch[i]))
-                        predicted_labels.append(np.argmax(y_pred[i]))
+                        predicted_labels.append(np.argmax(np.average(y_pred[i:(i + self.config.cell_patches)])))
                     val_loss += np.average(loss)
 
                 # Computes a confusion matrix.
@@ -361,11 +361,11 @@ class Model:
 
             if test:
                 # Saves the model.
-                # if self.config.model_tuning and self.config.mode != 'supervised':
-                #     if not os.path.isdir(self.config.model_path):
-                #         os.makedirs(self.config.model_path)
-                #     saver.save(sess, self.config.model_path)
-                #     self.log('Model Saved')
+                if self.config.model_tuning and self.config.mode != 'supervised':
+                    if not os.path.isdir(self.config.model_path):
+                        os.makedirs(self.config.model_path)
+                    saver.save(sess, self.config.model_path)
+                    self.log('Model Saved')
 
                 # Initialises the testing data iterator.
                 sess.run(test_init_op)
@@ -396,9 +396,9 @@ class Model:
                         y_pred = temp_y_pred[0]
 
                     # Adds the labels and predictions to the lists.
-                    for i in range(len(label_batch) - 1):
+                    for i in range(0, len(label_batch) - 1, self.config.cell_patches):
                         labels.append(np.argmax(label_batch[i]))
-                        predicted_labels.append(np.argmax(y_pred[i]))
+                        predicted_labels.append(np.argmax(np.average(y_pred[i:(i + self.config.cell_patches)])))
                     test_loss += np.average(loss)
 
                 # Calculates Recall, Precision, F1-Score, Mean Class Accuracy and Loss.
