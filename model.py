@@ -424,10 +424,11 @@ class Model:
                 # Returns the testing metrics.
                 return accuracy_score, accuracy, recall, precision, f1_score, loss
 
-    def predict(self, data):
-        """
-        :param data:
-        :return:
+    def predict(self, data, method=np.average):
+        """ Make cell predictions from the unlabelled dataset.
+        :param data: A dataset object.
+        :param method: A method for how to combine the predictions of each cell.
+        :return: A list of predictions for each cell.
         """
 
         predictions = []
@@ -453,4 +454,8 @@ class Model:
                 for iteration in range(iterations):
                     temp.append(sess.run(tf.nn.softmax(self.model), feed_dict={self.X: image_batch}).tolist())
                 predictions += np.var(temp, axis=0)
-        return predictions
+
+        cell_predictions = []
+        for i in range(0, len(data.data_y) - 1, self.config.cell_patches):
+            cell_predictions.append(method(predictions[i : i + self.config.cell_patches], axis=0))
+        return cell_predictions

@@ -1,7 +1,7 @@
 import config
 from model import Model
 import matplotlib.pyplot as plt
-from random_learner import Random
+from random_learner import RandomLearner
 from data_handler import DataHandler
 
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         data_handler = DataHandler(config)
 
         if config.mode.lower() == 'random':
-            learner = Random(data_handler, model, config)
+            learner = RandomLearner(data_handler, model, config)
 
         accuracies, mean_accuracies, recalls, precisions, f1_scores, losses = learner.run()
 

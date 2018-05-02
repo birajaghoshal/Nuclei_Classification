@@ -1,12 +1,12 @@
 import time
-import random
+import numpy as np
 from active_learner import ActiveLearner
 
 
-class RandomLearner(ActiveLearner):
+class UncertaintyLearner(ActiveLearner):
     def run(self):
-        """ Runs the active learner with random data updates.
-        :return: The lists of testing metrics from each iteration.
+        """ Runs the active learner with data updates based on uncertainty.
+        :return: The list of testing metrics from each iteration.
         """
 
         # Defines the lists to store the metrics.
@@ -28,9 +28,11 @@ class RandomLearner(ActiveLearner):
             f1_scores.append(f1_score)
             losses.append(loss)
 
-            # Randomly adds data to the training data.
-            self.data.set_training_data(random.sample(list(range(len(self.data.data_y) / self.config.cell_patches)),
-                                                      self.config.update_size))
+            # Makes predictions for each cell and selects the most uncertain cells.
+            predictions = self.predict(np.amin)
+            indices = [i[1] for i in sorted(((value, index) for index, value in enumerate(predictions)),
+                                            reverse=True)[:self.config.update_size]]
+            self.data.set_training_data(indices)
             self.log("\n\n")
 
         # Trains the model with all the data.

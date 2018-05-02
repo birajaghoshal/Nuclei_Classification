@@ -30,3 +30,11 @@ class ActiveLearner:
 
         model = copy.copy(self.model)
         return model.train(self.data)
+
+    def predict(self, method):
+        """ Makes a new model and makes predictions on the unlabelled data.
+        :return: The predictions for each cell.
+        """
+
+        model = copy.copy(self.model)
+        return model.predict(self.data, method)
