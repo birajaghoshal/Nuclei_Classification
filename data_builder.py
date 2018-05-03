@@ -35,8 +35,8 @@ def create_training_data(in_dir, out_dir, patch_size, stride):
                             patches.append(cv2.flip(patches[0], x))
                             for y in [1, 2, 3]:
                                 patches.append(np.rot90(patches[0], y))
-                        for p in range(len(patches)):
-                            cv2.imwrite(out_dir + '/' + str(patch_count) + ".bmp", patches[p])
+                        for m in range(len(patches)):
+                            cv2.imwrite(out_dir + '/' + str(patch_count) + ".bmp", patches[m])
                             if patch_count % 100 == 0:
                                 print(str(patch_count) + " Completed!")
                             patch_files.append(str(patch_count) + ".bmp")
