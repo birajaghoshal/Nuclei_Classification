@@ -41,7 +41,7 @@ class DataHandler:
         """
 
         values = np.load(data_dir + "Training/values.npy")
-        self.data_x = values[0]
+        self.data_x = np.array(values[0])
         self.data_x = [data_dir + "Training/" + i for i in self.data_x]
         self.data_y = values[1].astype(int)
 
@@ -51,7 +51,7 @@ class DataHandler:
         """
 
         values = np.load(data_dir + "Testing/values.npy")
-        self.test_x = values[0]
+        self.test_x = np.array(values[0])
         self.test_x = [data_dir + "Testing/" + i for i in self.test_x]
         self.test_y = values[1].astype(int)
 
@@ -81,12 +81,18 @@ class DataHandler:
         num_val = int((len(self.train_y) / self.config.cell_patches) * self.val_per)
         indices = []
         for _ in range(num_val):
-            random_index = random.randint(0, int(len(self.train_y) / num_val))
+            random_index = random.randint(0, int(len(self.train_y) / num_val)) * self.config.cell_patches
             indices += list(range(random_index, random_index + self.config.cell_patches))
-        val_x = np.array([i for j, i in enumerate(self.data_x) if j in indices])
-        val_y = np.array([i for j, i in enumerate(self.data_y) if j in indices])
-        self.data_x = np.delete(self.data_x, indices)
-        self.data_y = np.delete(self.data_y, indices)
+
+        val_x = np.take(self.train_x, indices)
+        val_y = np.take(self.train_y, indices)
+        self.train_x = np.delete(self.train_x, indices)
+        self.train_y = np.delete(self.train_y, indices)
+
+        # val_x = np.array([i for j, i in enumerate(self.train_x) if j in indices])
+        # val_y = np.array([i for j, i in enumerate(self.train_y) if j in indices])
+        # self.data_x = np.delete(self.train_x, indices)
+        # self.data_y = np.delete(self.train_y, indices)
         if self.config.combine.lower() == "add":
             self.val_x = np.append(self.val_x, val_x)
             self.val_y = np.append(self.val_y, val_y)
@@ -127,12 +133,12 @@ class DataHandler:
             full_indices.append(list(range(index, index + self.config.cell_patches)))
 
         # Sets temparary lists to the data to be added.
-        temp_x = np.array([i for j, i in enumerate(self.data_x) if j in full_indices])
-        temp_y = np.array([i for j, i in enumerate(self.data_y) if j in full_indices])
+        temp_x = np.take(self.data_x, full_indices)
+        temp_y = np.take(self.data_y, full_indices)
 
         # Removes the data from the unannotated list.
-        self.data_x = np.array([i for j, i in enumerate(self.data_x) if j not in full_indices])
-        self.data_y = np.array([i for j, i in enumerate(self.data_y) if j not in full_indices])
+        self.data_x = np.delete(self.data_x, full_indices)
+        self.data_y = np.delete(self.data_y, full_indices)
 
         # Balances the data.
         if self.config.balance:
@@ -178,7 +184,7 @@ class DataHandler:
 
         # Reads and decodes the image file.
         image_file = tf.read_file(image_path)
-        image = tf.image.decode_image(image_file, channels=self.config.input_channels)
+        image = tf.image.decode_bmp(image_file)
 
         # Returens the image and label.
         return tf.cast(image, "float"), one_hot_label

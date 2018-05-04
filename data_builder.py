@@ -28,9 +28,9 @@ def create_training_data(in_dir, out_dir, patch_size, stride):
         for p in range(len(point_sets)):
             for point in point_sets[p]:
                 patches = []
-                for i in range(int(point[0]) - 3, int(point[0]) + 4, stride):
+                for i in range(int(point[0]) - 1, int(point[0]) + 6, stride):
                     for j in range(int(point[1]) - 3, int(point[1]) + 4, stride):
-                        patches.append(border_image[j - b_size:j + b_size + 1, i - b_size:i + b_size + 1])
+                        patches.append(border_image[j-4:j + patch_size -3, i-4:i + patch_size -3])
                         for x in [0, 1, 2]:
                             patches.append(cv2.flip(patches[0], x))
                             for y in [1, 2, 3]:
