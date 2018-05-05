@@ -202,10 +202,9 @@ class DataHandler:
         train_images = tf.constant(self.train_x)
         train_labels = tf.constant(self.train_y)
         train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
-        train_dataset = train_dataset.interleave(tf.data.TFRecordDataset, 2)
         train_dataset = train_dataset.shuffle(1000)
         train_dataset = train_dataset.map(self.input_parser, num_parallel_calls=4)
-        train_dataset = train_dataset.prefetch(len(self.train_x) / int(np.ceil(len(self.train_y) / train_batch_size)))
+        train_dataset = train_dataset.prefetch(train_batch_size * 1000)
         train_dataset = train_dataset.batch(train_batch_size).repeat(None)
 
         # Testing set - Loads the data into tensors
@@ -214,9 +213,8 @@ class DataHandler:
         test_images = tf.constant(self.test_x)
         test_labels = tf.constant(self.test_y)
         test_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
-        test_dataset = test_dataset.interleave(tf.data.TFRecordDataset, 2)
         test_dataset = test_dataset.map(self.input_parser, num_parallel_calls=4)
-        test_dataset = test_dataset.prefetch(int(np.ceil(len(self.test_y) / test_batch_size)))
+        test_dataset = test_dataset.prefetch(test_batch_size * 1000)
         test_dataset = test_dataset.batch(test_batch_size)
 
         # Validation set - Loads the data into tensors
@@ -225,9 +223,8 @@ class DataHandler:
         val_images = tf.constant(self.val_x)
         val_labels = tf.constant(self.val_y)
         val_dataset = tf.data.Dataset.from_tensor_slices((val_images, val_labels))
-        val_dataset = val_dataset.interleave(tf.data.TFRecordDataset, 2)
         val_dataset = val_dataset.map(self.input_parser, num_parallel_calls=4)
-        val_dataset = val_dataset.prefetch(int(np.ceil(len(self.val_y) / test_batch_size)))
+        val_dataset = val_dataset.prefetch(test_batch_size * 1000)
         val_dataset = val_dataset.batch(test_batch_size)
 
         # Returns the dataset objects.
