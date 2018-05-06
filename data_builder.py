@@ -39,11 +39,11 @@ def data_builder(in_dir, out_dir, patch_size, stride):
                                 patches.append(temp_patch)
                         for m in range(len(patches)):
                             cv2.imwrite(out_dir + '/' + str(patch_count) + ".bmp", patches[m])
+                            patch_files.append(str(patch_count) + ".bmp")
+                            classifications.append(p)
                             patch_count += 1
                             if patch_count % 1000 == 0:
                                 print(str(patch_count) + " Completed!")
-                            patch_files.append(str(patch_count) + ".bmp")
-                            classifications.append(p)
                             cell_count += 1
                         patches = []
                 print("Patches per cell: " + str(cell_count))
