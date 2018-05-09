@@ -59,6 +59,8 @@ def load_configs():
     parser.add_argument("--bayesian", action="store_true",
                         default=config["model"]["bayesian"].lower() == "true",
                         help="Boolean if the model should use MCdropout to simulate bayesian uncertainty.")
+    parser.add_argument("--bayesian_iterations", type=int, default=config["model"]["bayesian_iterations"],
+                        help="Integer value representing the number of iterations for the bayesian prediction")
     parser.add_argument("--model_path", type=str, default=config["model"]["model_path"],
                         help="File path where the models weights shall be saved and loaded.")
 
@@ -68,13 +70,12 @@ def load_configs():
                         help="Boolean if the loss should be weighted.")
     parser.add_argument("--learning_rate", type=float, default=float(config["optimiser"]["learning_rate"]),
                         help="Floating point value representing the learning rate for the model.")
-    parser.add_argument("--decay", type=float, default=float(config["optimiser"]["decay"]),
-                        help="Floating point value representing the learning rate decay over each update.")
+    parser.add_argument("--rho", type=float, default=float(config["optimiser"]["rho"]),
+                        help="Floating point value representing the rho.")
     parser.add_argument("--epsilon", type=float, default=float(config["optimiser"]["epsilon"]),
                         help="Floating point value to scale the weights learning rate.")
-    parser.add_argument("--use_locking", action="store_true",
-                        default=config["optimiser"]["use_locking"].lower() == "true",
-                        help="Boolean if locks should be used for weight updates.")
+    parser.add_argument("--decay", action="store_true", default=float(config["optimiser"]["decay"]),
+                        help="Floating point value representing the learning rate decay after each update.")
 
     # Converge Checking Parameters
     parser.add_argument("--training_threshold", type=float, default=float(config["converge"]["training_threshold"]),
