@@ -166,7 +166,7 @@ class Model:
             class_weights = None
 
         history = self.model.fit_generator(train_gen, verbose=0,
-                                           epochs=1,#self.config.max_epochs,
+                                           epochs=self.config.max_epochs,
                                            validation_data=val_gen,
                                            class_weight=class_weights,
                                            callbacks=[EarlyStop(self.config.min_epochs,
@@ -213,3 +213,20 @@ class Model:
         :param method: A method for how to combine the predictions of each cell.
         :return: A list of predictions for each cell.
         """
+
+        gen = keras.preprocessing.image.ImageDataGenerator()
+        data_gen = ImageLoader(data.data_x, data.data_y, self.config.data_dir, gen,
+                              target_size=(27, 27), shuffle=False)
+        predictions = []
+        for i in range(self.config.bayesian_iterations):
+            predictions.append(self.model.predict_generator(data_gen, use_multiprocessing=True))
+            self.log('Bayesian Iteration: ' + str(i + 1))
+        predictions = np.average(predictions, axis=0) if self.config.bayesian_iterations else predictions[0]
+
+        predicted_labels = []
+        for i in range(0, len(predictions), self.config.cell_patches):
+            if i == 500:
+                pass
+            averages = np.average(predictions[i:(i + self.config.cell_patches)], axis=0)
+            predicted_labels.append(np.argmax(averages))
+        return predicted_labels
