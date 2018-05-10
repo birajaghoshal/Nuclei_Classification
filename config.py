@@ -93,12 +93,6 @@ def load_configs():
     parser.add_argument("--intervals", type=int, default=int(config["training"]["intervals"]),
                         help="Integer for the number of epochs before logging the training process.")
 
-    # Data Loading Parameters
-    parser.add_argument("--parallel_calls", type=int, default=int(config["data_loader"]["parallel_calls"]),
-                        help="Integer representing the number of parallel calls used in data loading.")
-    parser.add_argument("--prefetch", type=int, default=int(config["data_loader"]["prefetch"]),
-                        help="Integer representing the number of patches to prefetch in during data loading.")
-
     # Active Learning Parameters
     parser.add_argument("--model_tuning", action="store_true",
                         default=config["active"]["model_tuning"].lower() == "true",
