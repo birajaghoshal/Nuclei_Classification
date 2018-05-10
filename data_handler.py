@@ -41,9 +41,9 @@ class DataHandler:
         """
 
         values = np.load(data_dir + "Training/values.npy")
-        self.data_x = np.array(values[0])
-        self.data_x = [data_dir + "Training/" + i for i in self.data_x]
-        self.data_y = values[1].astype(int)
+        self.data_x = np.array(values[:, 0])
+        self.data_x = np.array(["Training/" + i for i in self.data_x])
+        self.data_y = values[:, 1].astype(int)
 
     def load_testing_data(self, data_dir):
         """ Loads the testing data to the testing data lists.
@@ -51,9 +51,9 @@ class DataHandler:
         """
 
         values = np.load(data_dir + "Testing/values.npy")
-        self.test_x = np.array(values[0])
-        self.test_x = [data_dir + "Testing/" + i for i in self.test_x]
-        self.test_y = values[1].astype(int)
+        self.test_x = np.array(values[:, 0])
+        self.test_x = np.array(["Testing/" + i for i in self.test_x])
+        self.test_y = values[:,1].astype(int)
 
     def balance(self, x_list, y_list):
         """ A method to balance a set of data.
@@ -85,9 +85,9 @@ class DataHandler:
             indices += list(range(random_index, random_index + self.config.cell_patches))
 
         val_x = np.take(self.train_x, indices)
-        val_y = np.take(self.train_y, indices)
+        val_y = np.take(self.train_y, indices)#, axis=0)
         self.train_x = np.delete(self.train_x, indices)
-        self.train_y = np.delete(self.train_y, indices)
+        self.train_y = np.delete(self.train_y, indices)#, axis=0)
 
         # val_x = np.array([i for j, i in enumerate(self.train_x) if j in indices])
         # val_y = np.array([i for j, i in enumerate(self.train_y) if j in indices])
@@ -95,7 +95,7 @@ class DataHandler:
         # self.data_y = np.delete(self.train_y, indices)
         if self.config.combine.lower() == "add":
             self.val_x = np.append(self.val_x, val_x)
-            self.val_y = np.append(self.val_y, val_y)
+            self.val_y = np.append(self.val_y, val_y)#, axis=0) if len(self.val_y) != 0 else val_y
         elif self.config.combine.lower() == "replace":
             self.val_x = val_x
             self.val_y = val_y
@@ -118,7 +118,6 @@ class DataHandler:
         self.set_validation_set()
 
         # Logs the number of patches.
-        self.class_weights = list(Counter(self.train_y).values())
         self.log("Training Patches: " + str(len(self.train_y)))
         self.log("Validation Patches: " + str(len(self.val_y)))
 
@@ -134,11 +133,11 @@ class DataHandler:
 
         # Sets temparary lists to the data to be added.
         temp_x = np.take(self.data_x, full_indices)
-        temp_y = np.take(self.data_y, full_indices)
+        temp_y = np.take(self.data_y, full_indices)#, axis=0)
 
         # Removes the data from the unannotated list.
         self.data_x = np.delete(self.data_x, full_indices)
-        self.data_y = np.delete(self.data_y, full_indices)
+        self.data_y = np.delete(self.data_y, full_indices)#, axis=0)
 
         # Balances the data.
         if self.config.balance:
@@ -147,7 +146,7 @@ class DataHandler:
         # Adds the data depending on specified method.
         if self.config.combine.lower() == "add":
             self.train_x = np.append(self.train_x, temp_x)
-            self.train_y = np.append(self.train_y, temp_y)
+            self.train_y = np.append(self.train_y, temp_y)#, axis=0) if len(self.train_y) != 0 else temp_y
         elif self.config.combine.lower() == "replace":
             self.train_x = temp_x
             self.train_y = temp_y
@@ -156,7 +155,6 @@ class DataHandler:
         self.set_validation_set()
 
         # Logs the number of patches.
-        self.class_weights = list(Counter(self.train_y).values())
         self.log("Training Patches: " + str(len(self.train_y)))
         self.log("Validation Patches: " + str(len(self.val_y)))
 
@@ -202,10 +200,10 @@ class DataHandler:
         train_images = tf.constant(self.train_x)
         train_labels = tf.constant(self.train_y)
         train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
-        train_dataset = train_dataset.shuffle(1000)
+        train_dataset = train_dataset.shuffle(10000)
         train_dataset = train_dataset.map(self.input_parser, num_parallel_calls=self.config.parallel_calls)
         train_dataset = train_dataset.prefetch(train_batch_size * self.config.prefetch)
-        train_dataset = train_dataset.batch(train_batch_size).repeat(None)
+        train_dataset = train_dataset.batch(train_batch_size) #.repeat(None)
 
         # Testing set - Loads the data into tensors
         #               Sets the input_parser as the operation for loading the data.

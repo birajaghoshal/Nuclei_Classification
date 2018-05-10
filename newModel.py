@@ -4,6 +4,7 @@ import keras
 import pickle
 import numpy as np
 import tensorflow as tf
+from collections import Counter
 from generator import ImageLoader
 import sklearn.metrics as metrics
 
@@ -158,13 +159,22 @@ class Model:
         val_gen = ImageLoader(data.val_x, data.val_y, self.config.data_dir, gen,
                                 target_size=(27, 27), shuffle=False)
 
+        if self.config.weighted_loss:
+            counter = Counter(train_gen.classes)
+            max_val = float(max(counter.values()))
+            class_weights = {class_id: max_val / num_images for class_id, num_images in counter.items()}
+        else:
+            class_weights = None
+
         history = self.model.fit_generator(train_gen, verbose=0,
                                            epochs=self.config.max_epochs,
                                            validation_data=val_gen,
+                                           class_weight=class_weights,
                                            callbacks=[EarlyStop(self.config.min_epochs,
                                                       self.config.batch_epochs,
                                                       self.config.training_threshold,
-                                                      self.log)])
+                                                      self.log)],
+                                           use_multiprocessing=True)
 
         with open('/History/' + experiment, 'wb') as file_pi:
             pickle.dump(history.history, file_pi)
