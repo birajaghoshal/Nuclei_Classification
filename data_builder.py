@@ -3,7 +3,6 @@ import cv2
 import sys
 import numpy as np
 import scipy.io as io
-from collections import Counter
 
 
 def data_builder(in_dir, out_dir, patch_size, stride):
@@ -27,18 +26,18 @@ def data_builder(in_dir, out_dir, patch_size, stride):
         for p in range(len(point_sets)):
             for point in np.round(point_sets[p]).astype(int):
                 patches = []
-                for i in range(round(point[0]) - 3 + patch_size, round(point[0]) + 3 + patch_size, stride):
-                    for j in range(round(point[1]) - 3 + patch_size, round(point[1]) + 3 + patch_size, stride):
+                for i in range(round(point[0]) - 3 + patch_size, round(point[0]) + 4 + patch_size, stride):
+                    for j in range(round(point[1]) - 3 + patch_size, round(point[1]) + 4 + patch_size, stride):
                         patch = border_image[j - b: j + b + 1, i - b: i + b + 1]
                         patches.append(patch)
-                        for x in [0, 1, 2]:
-                            patch = cv2.flip(patches[0], x)
-                            patches.append(patch)
-                            for y in [1, 2, 3]:
-                                temp_patch = np.rot90(patch, y)
-                                patches.append(temp_patch)
+                        # for x in [0, 1, 2]:
+                        #     patch = cv2.flip(patches[0], x)
+                        #     patches.append(patch)
+                        #     for y in [1, 2, 3]:
+                        #         temp_patch = np.rot90(patch, y)
+                        #         patches.append(temp_patch)
                         for m in range(len(patches)):
-                            cv2.imwrite(out_dir + '/' + str(patch_count) + ".bmp", patches[m])
+                            cv2.imwrite(out_dir + "/" + str(patch_count) + ".bmp", patches[m])
                             patch_files.append(str(patch_count) + ".bmp")
                             classifications.append(p)
                             patch_count += 1
@@ -49,10 +48,10 @@ def data_builder(in_dir, out_dir, patch_size, stride):
                 print("Patches per cell: " + str(cell_count))
                 cell_count = 0
         print("Image " + str(img_num) + " Completed!")
-    np.save(out_dir + "/values.npy", np.array([patch_files, classifications]))
+    np.save(out_dir + "/values.npy",
+            np.array([np.insert(np.array(l).astype(str), 0, f) for f, l in zip(patch_files, classifications)]))
     print("Done!")
     print("Number of Patches: " + str(patch_count))
-    print("Patch Types: " + str(Counter(classifications)))
 
 
 if __name__ == "__main__":
