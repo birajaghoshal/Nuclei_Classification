@@ -1,7 +1,6 @@
 import os
 import time
 import keras
-import pickle
 import numpy as np
 import tensorflow as tf
 from collections import Counter
@@ -167,7 +166,7 @@ class Model:
             class_weights = None
 
         history = self.model.fit_generator(train_gen, verbose=0,
-                                           epochs=self.config.max_epochs,
+                                           epochs=1,#self.config.max_epochs,
                                            validation_data=val_gen,
                                            class_weight=class_weights,
                                            callbacks=[EarlyStop(self.config.min_epochs,
@@ -176,43 +175,37 @@ class Model:
                                                       self.log)],
                                            use_multiprocessing=True)
 
-        with open('/History/' + experiment, 'wb') as file_pi:
-            pickle.dump(history.history, file_pi)
+        if test:
+            test_gen = ImageLoader(data.test_x, data.test_y, self.config.data_dir, gen,
+                                   target_size=(27, 27), shuffle=False)
+            predictions = []
+            for i in range(self.config.bayesian_iterations):
+                predictions.append(self.model.predict_generator(test_gen, use_multiprocessing=True))
+                self.log('Bayesian Iteration: ' + str(i+1))
+            predictions = np.average(predictions, axis=0) if self.config.bayesian_iterations else predictions[0]
 
-        # if test:
-        #     predictions = []
-        #     test_gen = ImageLoader(data.val_x, data.val_y, self.config.data_dir, gen,
-        #                           target_size=(27, 27), shuffle=False)
-        #
-        #     for i in range(self.config.bayesian_iterations):
-        #         iterator = test_data.make_one_shot_iterator()
-        #         next_batch = iterator.get_next()
-        #         temp_predictions, labels = [], []
-        #         for _ in range(test_steps):
-        #             image_batch, label_batch = keras.backend.get_session().run(next_batch)
-        #             temp_predictions += self.model.predict_on_batch(image_batch).tolist()
-        #             labels += label_batch.tolist()
-        #         predictions.append(temp_predictions)
-        #     predictions = np.average(predictions, axis=0)
-        #
-        #     predicted_labels = []
-        #     for i in range(0, len(predictions) - 1, self.config.cell_patches):
-        #         predicted_labels.append(np.argmax(np.average(predictions[i:(i + self.config.cell_patches)])))
-        #
-        #     recall = metrics.recall_score(labels, predicted_labels, average='micro')
-        #     precision = metrics.precision_score(labels, predicted_labels, average='micro')
-        #     f1_score = metrics.f1_score(labels, predicted_labels, average='micro')
-        #     cmat = metrics.confusion_matrix(labels, predicted_labels)
-        #     accuracy = np.mean(cmat.diagonal() / cmat.sum(axis=1))
-        #     accuracy_score = metrics.accuracy_score(labels, predicted_labels)
-        #
-        #     # Prints the calculated testing metrics.
-        #     message = '\nModel trained with an Accuracy: {:.4f}'.format(accuracy_score)
-        #     message += ' Mean Class Accuracy: {:.4f}'.format(accuracy)
-        #     message += ' Recall: {:.4f}'.format(recall)
-        #     message += ' Precision: {:.4f}'.format(precision)
-        #     message += ' F1-Score: {:.4f}'.format(f1_score)
-        #     self.log(message)
+            predicted_labels, labels = [], []
+            for i in range(0, len(predictions), self.config.cell_patches):
+                if i == 500:
+                    pass
+                averages = np.average(predictions[i:(i + self.config.cell_patches)], axis=0)
+                predicted_labels.append(np.argmax(averages))
+                labels.append(data.test_y[i])
+
+            recall = metrics.recall_score(labels, predicted_labels, average='micro')
+            precision = metrics.precision_score(labels, predicted_labels, average='micro')
+            f1_score = metrics.f1_score(labels, predicted_labels, average='micro')
+            cmat = metrics.confusion_matrix(labels, predicted_labels)
+            accuracy = np.mean(cmat.diagonal() / cmat.sum(axis=1))
+            accuracy_score = metrics.accuracy_score(labels, predicted_labels)
+
+            # Prints the calculated testing metrics.
+            message = '\nModel trained with an Accuracy: {:.4f}'.format(accuracy_score)
+            message += ' Mean Class Accuracy: {:.4f}'.format(accuracy)
+            message += ' Recall: {:.4f}'.format(recall)
+            message += ' Precision: {:.4f}'.format(precision)
+            message += ' F1-Score: {:.4f}'.format(f1_score)
+            self.log(message)
 
     def predict(self, data, method=np.average):
         """ Make cell predictions from the unlabelled dataset.
