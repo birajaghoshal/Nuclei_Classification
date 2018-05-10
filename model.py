@@ -137,7 +137,7 @@ class Model:
                 self.log_fn(message)
                 self.val_losses.append(logs.get('val_loss'))
                 self.train_losses.append(logs.get('loss'))
-                if (epoch + 1) % self.batch == 0 and (epoch + 1) >= self.min_epochs:
+                if (epoch + 1) >= self.min_epochs:
                     g_loss = 100 * ((self.val_losses[-1] / min(self.val_losses[:-1])) - 1)
                     t_progress = 1000 * ((sum(self.train_losses[-(self.batch+1):-1]) /
                                           (2 * min(self.train_losses[--(self.batch+1):-1]))) - 1)
