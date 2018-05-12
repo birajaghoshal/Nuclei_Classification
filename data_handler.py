@@ -80,14 +80,15 @@ class DataHandler:
 
         num_val = int((len(self.train_y) / self.config.cell_patches) * self.val_per)
         indices = []
-        for _ in range(num_val):
-            random_index = random.randint(0, int(len(self.train_y) / num_val)) * self.config.cell_patches
-            indices += list(range(random_index, random_index + self.config.cell_patches))
+        cell_indices = np.random.choice(list(range(len(self.train_y) // self.config.cell_patches)), num_val, False)
+        for i in cell_indices:
+            index = i * self.config.cell_patches
+            indices += list(range(index, index + self.config.cell_patches))
 
         val_x = np.take(self.train_x, indices)
-        val_y = np.take(self.train_y, indices)#, axis=0)
+        val_y = np.take(self.train_y, indices)
         self.train_x = np.delete(self.train_x, indices)
-        self.train_y = np.delete(self.train_y, indices)#, axis=0)
+        self.train_y = np.delete(self.train_y, indices)
 
         # val_x = np.array([i for j, i in enumerate(self.train_x) if j in indices])
         # val_y = np.array([i for j, i in enumerate(self.train_y) if j in indices])
@@ -157,3 +158,10 @@ class DataHandler:
         # Logs the number of patches.
         self.log("Training Patches: " + str(len(self.train_y)))
         self.log("Validation Patches: " + str(len(self.val_y)))
+
+    def sample_data(self, x, y):
+        indices = []
+        for i in range(0, len(x), self.config.cell_patches):
+            cell_indices = list(range(i, i + self.config.cell_patches))
+            indices += np.random.choice(cell_indices, self.config.sample_size).tolist()
+        return np.take(x, indices), np.take(y, indices)
