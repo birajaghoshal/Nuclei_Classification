@@ -118,7 +118,7 @@ class Model:
         """
 
         class EarlyStop(keras.callbacks.Callback):
-            def __init__(self, min_epochs=0, batch=5, target=1., log_fn=print):
+            def __init__(self, min_epochs=0, batch=5, target=1., save_path="model", log_fn=print):
                 super().__init__()
                 self.val_losses = []
                 self.train_losses = []
@@ -127,6 +127,7 @@ class Model:
                 self.target = target
                 self.start_time = time.clock()
                 self.log_fn = log_fn
+                self.save_path = save_path
 
             def on_epoch_end(self, epoch, logs=None):
                 message = 'Epoch: ' + str(epoch + 1).zfill(4)
@@ -145,10 +146,12 @@ class Model:
                     if g_loss / t_progress > self.target:
                         self.log_fn('Stopped at epoch ' + str(epoch + 1))
                         self.model.stop_training = True
+                    else:
+                        self.model.save(self.save_path, overwrite=True)
 
         # Loads the existing weights to the model.
         if self.config.model_tuning and self.config.mode != 'supervised' and os.path.isdir(self.config.model_path):
-            self.model.load_weights(self.config.model_path + '/weights')
+            self.model = keras.models.load_model(self.config.model_path)
             self.log('Model Restored')
 
         gen = keras.preprocessing.image.ImageDataGenerator()
@@ -175,10 +178,12 @@ class Model:
                                            callbacks=[EarlyStop(self.config.min_epochs,
                                                       self.config.batch_epochs,
                                                       self.config.training_threshold,
+                                                      self.config.model_path,
                                                       self.log)],
                                            use_multiprocessing=True)
 
         if test:
+            self.model = keras.models.load_model(self.config.model_path)
             test_x, test_y = data.sample_data(data.test_x, data.test_y)
             test_gen = ImageLoader(test_x, test_y, self.config.data_dir, gen,
                                    target_size=(27, 27), shuffle=False)
@@ -190,7 +195,7 @@ class Model:
 
             predicted_labels, labels = [], []
             for i in range(0, len(predictions), self.config.sample_size):
-                averages = method(predictions[i:(i + self.config.cell_patches)], axis=0)
+                averages = method(predictions[i:(i + self.config.sample_size)], axis=0)
                 predicted_labels.append(np.argmax(averages))
                 labels.append(data.test_y[i])
 
@@ -228,6 +233,6 @@ class Model:
 
         predicted_labels = []
         for i in range(0, len(predictions), self.config.sample_size):
-            averages = method(predictions[i:(i + self.config.cell_patches)], axis=0)
+            averages = method(predictions[i:(i + self.config.sample_size)], axis=0)
             predicted_labels.append(np.argmax(averages))
         return predicted_labels
