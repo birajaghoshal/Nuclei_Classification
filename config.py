@@ -46,6 +46,8 @@ def load_configs():
                         help="Method on how to combine the new data to the existing data. [add or replace]")
     parser.add_argument("--cell_patches", type=int, default=config["data"]["cell_patches"],
                         help="Integer for the number of patches for each cell.")
+    parser.add_argument("--sample_size", type=int, default=int(config["data"]["sample_size"]),
+                        help="Integer value representing the size of the data sample.")
     
     # Model Parameters
     parser.add_argument("--input_height", type=int, default=int(config["model"]["input_height"]),
