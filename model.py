@@ -109,7 +109,7 @@ class Model:
         model.compile(optimizer=optimiser, loss='categorical_crossentropy', metrics=['accuracy'])
         return model
 
-    def train(self, data, test=True, experiment="0"):
+    def train(self, data, test=True, experiment="0", method=np.average):
         """ The main training loop for the model.
         :param data: A dataset object.
         :param test: Boolean if the model should be tested.
@@ -141,9 +141,9 @@ class Model:
                     g_loss = 100 * ((self.val_losses[-1] / min(self.val_losses[:-1])) - 1)
                     t_progress = 1000 * ((sum(self.train_losses[-(self.batch+1):-1]) /
                                           (2 * min(self.train_losses[--(self.batch+1):-1]))) - 1)
-                    print('Training Progress: {:.4}'.format(g_loss / t_progress))
+                    self.log_fn('Training Progress: {:.4}'.format(g_loss / t_progress))
                     if g_loss / t_progress > self.target:
-                        print('Stopped at epoch ' + str(epoch + 1))
+                        self.log_fn('Stopped at epoch ' + str(epoch + 1))
                         self.model.stop_training = True
 
         # Loads the existing weights to the model.
@@ -192,7 +192,7 @@ class Model:
             for i in range(0, len(predictions), self.config.cell_patches):
                 if i == 500:
                     pass
-                averages = np.average(predictions[i:(i + self.config.cell_patches)], axis=0)
+                averages = method(predictions[i:(i + self.config.cell_patches)], axis=0)
                 predicted_labels.append(np.argmax(averages))
                 labels.append(data.test_y[i])
 
