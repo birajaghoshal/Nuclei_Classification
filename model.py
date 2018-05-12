@@ -152,10 +152,13 @@ class Model:
             self.log('Model Restored')
 
         gen = keras.preprocessing.image.ImageDataGenerator()
-
-        train_gen = ImageLoader(data.train_x, data.train_y, self.config.data_dir, gen,
+        train_x, train_y = data.sample_data(data.train_x, data.train_y)
+        val_x, val_y = data.sample_data(data.val_x, data.val_y)
+        self.log("Sampled Training Patches: " + str(len(train_x)))
+        self.log("Sampled Validation Patches: " + str(len(val_x)))
+        train_gen = ImageLoader(train_x, train_y, self.config.data_dir, gen,
                                 target_size=(27, 27), batch_size=self.config.batch_size)
-        val_gen = ImageLoader(data.val_x, data.val_y, self.config.data_dir, gen,
+        val_gen = ImageLoader(val_x, val_y, self.config.data_dir, gen,
                                 target_size=(27, 27), shuffle=False)
 
         if self.config.weighted_loss:
@@ -176,7 +179,8 @@ class Model:
                                            use_multiprocessing=True)
 
         if test:
-            test_gen = ImageLoader(data.test_x, data.test_y, self.config.data_dir, gen,
+            test_x, test_y = data.sample_data(data.test_x, data.test_y)
+            test_gen = ImageLoader(test_x, test_y, self.config.data_dir, gen,
                                    target_size=(27, 27), shuffle=False)
             predictions = []
             for i in range(self.config.bayesian_iterations):
@@ -215,7 +219,8 @@ class Model:
         """
 
         gen = keras.preprocessing.image.ImageDataGenerator()
-        data_gen = ImageLoader(data.data_x, data.data_y, self.config.data_dir, gen,
+        data_x, data_y = data.sample_data(data.data_x, data.data_y)
+        data_gen = ImageLoader(data_x, data_y, self.config.data_dir, gen,
                               target_size=(27, 27), shuffle=False)
         predictions = []
         for i in range(self.config.bayesian_iterations):
@@ -227,6 +232,6 @@ class Model:
         for i in range(0, len(predictions), self.config.cell_patches):
             if i == 500:
                 pass
-            averages = np.average(predictions[i:(i + self.config.cell_patches)], axis=0)
+            averages = method(predictions[i:(i + self.config.cell_patches)], axis=0)
             predicted_labels.append(np.argmax(averages))
         return predicted_labels
