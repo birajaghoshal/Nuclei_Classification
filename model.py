@@ -140,7 +140,7 @@ class Model:
                 if (epoch + 1) >= self.min_epochs:
                     g_loss = 100 * ((self.val_losses[-1] / min(self.val_losses[:-1])) - 1)
                     t_progress = 1000 * ((sum(self.train_losses[-(self.batch+1):-1]) /
-                                          (2 * min(self.train_losses[--(self.batch+1):-1]))) - 1)
+                                          (self.batch * min(self.train_losses[--(self.batch+1):-1]))) - 1)
                     self.log_fn('Training Progress: {:.4}'.format(g_loss / t_progress))
                     if g_loss / t_progress > self.target:
                         self.log_fn('Stopped at epoch ' + str(epoch + 1))
@@ -189,9 +189,7 @@ class Model:
             predictions = np.average(predictions, axis=0) if self.config.bayesian_iterations else predictions[0]
 
             predicted_labels, labels = [], []
-            for i in range(0, len(predictions), self.config.cell_patches):
-                if i == 500:
-                    pass
+            for i in range(0, len(predictions), self.config.sample_size):
                 averages = method(predictions[i:(i + self.config.cell_patches)], axis=0)
                 predicted_labels.append(np.argmax(averages))
                 labels.append(data.test_y[i])
@@ -229,9 +227,7 @@ class Model:
         predictions = np.average(predictions, axis=0) if self.config.bayesian_iterations else predictions[0]
 
         predicted_labels = []
-        for i in range(0, len(predictions), self.config.cell_patches):
-            if i == 500:
-                pass
+        for i in range(0, len(predictions), self.config.sample_size):
             averages = method(predictions[i:(i + self.config.cell_patches)], axis=0)
             predicted_labels.append(np.argmax(averages))
         return predicted_labels
