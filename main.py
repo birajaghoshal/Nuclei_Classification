@@ -1,4 +1,5 @@
 import config
+import numpy as np
 from model import Model
 import matplotlib.pyplot as plt
 from data_handler import DataHandler
@@ -45,6 +46,8 @@ if __name__ == "__main__":
     elif config.mode.lower() in ['random']:
         model = Model(config)
         data_handler = DataHandler(config)
+        data_handler.set_training_data(np.random.choice(list(range(len(data_handler.data_x) // config.cell_patches)),
+                                                        config.update_size, replace=False))
 
         if config.mode.lower() == 'random':
             learner = RandomLearner(data_handler, model, config)

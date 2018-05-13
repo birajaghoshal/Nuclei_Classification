@@ -28,14 +28,6 @@ class Model:
         self.log("Model has been created\n")
         self.log(self.model.summary())
 
-    def __copy__(self):
-        """ Resets the model and returns a copy of the model.
-        :return: A reset copy of the reset Model
-        """
-
-        tf.reset_default_graph()
-        return Model(self.config)
-
     def log(self, message):
         """ Function to handle printing and logging of messages.
         :param message: String of message to be printed and logged.
@@ -47,59 +39,43 @@ class Model:
             print(message, file=open(self.config.log_file, 'a'))
 
     def create_model(self):
-        """ Creates a CNN model for Classification.
-        :return: A computational graph representing a CNN model for Classification.
-        """
-
-        # Alteration to Keras implementation of Dropout to be applied during prediction.
-        class AlwaysDropout(keras.layers.Dropout):
-            def call(self, inputs, training=None):
-                if 0. < self.rate < 1.:
-                    noise_shape = self._get_noise_shape(inputs)
-                    return keras.backend.dropout(inputs, self.rate, noise_shape, seed=self.seed)
-                return inputs
-
-        # Block 1
-        model = keras.models.Sequential()
-        model.add(keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', input_shape=self.input_shape))
-        model.add(keras.layers.BatchNormalization())
-        model.add(keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-        model.add(keras.layers.BatchNormalization())
-        model.add(keras.layers.MaxPool2D(padding='same'))
+        inputs = keras.layers.Input(self.input_shape)
+        model = keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
+        model = keras.layers.BatchNormalization()(model)
+        model = keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same')(model)
+        model = keras.layers.BatchNormalization()(model)
+        model = keras.layers.MaxPool2D(padding="Same")(model)
         if self.config.bayesian:
-            model.add(AlwaysDropout(0.25))
+            model = keras.layers.Dropout(0.25)(model, training=True)
 
-        # Block 2
-        model.add(keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
-        model.add(keras.layers.BatchNormalization())
-        model.add(keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu'))
-        model.add(keras.layers.BatchNormalization())
-        model.add(keras.layers.MaxPool2D(padding='same'))
+        model = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu')(model)
+        model = keras.layers.BatchNormalization()(model)
+        model = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu')(model)
+        model = keras.layers.BatchNormalization()(model)
+        model = keras.layers.MaxPool2D(padding='same')(model)
         if self.config.bayesian:
-            model.add(AlwaysDropout(0.25))
+            model = keras.layers.Dropout(0.25)(model, training=True)
 
-        # Block 3
-        model.add(keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu'))
-        model.add(keras.layers.BatchNormalization())
-        model.add(keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu'))
-        model.add(keras.layers.BatchNormalization())
-        model.add(keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu'))
-        model.add(keras.layers.BatchNormalization())
-        model.add(keras.layers.MaxPool2D(padding='same'))
+        model = keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu')(model)
+        model = keras.layers.BatchNormalization()(model)
+        model = keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu')(model)
+        model = keras.layers.BatchNormalization()(model)
+        model = keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu')(model)
+        model = keras.layers.BatchNormalization()(model)
+        model = keras.layers.MaxPool2D(padding='same')(model)
         if self.config.bayesian:
-            model.add(AlwaysDropout(0.25))
+            model = keras.layers.Dropout(0.25)(model, training=True)
 
-        # Block 4
-        model.add(keras.layers.Flatten())
-        model.add(keras.layers.Dense(1024, activation='relu'))
-        model.add(keras.layers.BatchNormalization())
+        model = keras.layers.Flatten()(model)
+        model = keras.layers.Dense(1024, activation='relu')(model)
+        model = keras.layers.BatchNormalization()(model)
         if self.config.bayesian:
-            model.add(AlwaysDropout(0.25))
-        model.add(keras.layers.Dense(1024, activation='relu'))
-        model.add(keras.layers.BatchNormalization())
-        model.add(keras.layers.Dense(self.num_classes, activation='softmax'))
+            model = keras.layers.Dropout(0.25)(model, training=True)
+        model = keras.layers.Dense(1024, activation='relu')(model)
+        model = keras.layers.BatchNormalization()(model)
+        outputs = keras.layers.Dense(self.num_classes, activation='softmax')(model)
 
-        # Creates an optimiser object.
+        model = keras.Model(inputs, outputs)
         optimiser = keras.optimizers.Adadelta(lr=self.config.learning_rate,
                                               rho=self.config.rho,
                                               epsilon=self.config.epsilon,
@@ -149,13 +125,13 @@ class Model:
                     else:
                         self.model.save(self.save_path, overwrite=True)
 
-        # Loads the existing weights to the model.
+        # Loads the existing Weights to the model.
         if self.config.model_tuning and self.config.mode != 'supervised' and os.path.isdir(self.config.model_path):
             self.model = keras.models.load_model(self.config.model_path)
             self.log('Model Restored')
 
         gen = keras.preprocessing.image.ImageDataGenerator()
-        train_x, train_y = data.sample_data(data.train_x, data.train_y)
+        train_x, train_y = data.get_training_data()
         val_x, val_y = data.sample_data(data.val_x, data.val_y)
         self.log("Sampled Training Patches: " + str(len(train_x)))
         self.log("Sampled Validation Patches: " + str(len(val_x)))
@@ -171,16 +147,18 @@ class Model:
         else:
             class_weights = None
 
-        history = self.model.fit_generator(train_gen, verbose=0,
-                                           epochs=self.config.max_epochs,
-                                           validation_data=val_gen,
-                                           class_weight=class_weights,
-                                           callbacks=[EarlyStop(self.config.min_epochs,
-                                                      self.config.batch_epochs,
-                                                      self.config.training_threshold,
-                                                      self.config.model_path,
-                                                      self.log)],
-                                           use_multiprocessing=True)
+        self.model.save(self.config.model_path, overwrite=True)
+
+        # history = self.model.fit_generator(train_gen, verbose=0,
+        #                                    epochs=self.config.max_epochs,
+        #                                    validation_data=val_gen,
+        #                                    class_weight=class_weights,
+        #                                    callbacks=[EarlyStop(self.config.min_epochs,
+        #                                               self.config.batch_epochs,
+        #                                               self.config.training_threshold,
+        #                                               self.config.model_path,
+        #                                               self.log)],
+        #                                    use_multiprocessing=True)
 
         if test:
             self.model = keras.models.load_model(self.config.model_path)
@@ -188,10 +166,12 @@ class Model:
             test_gen = ImageLoader(test_x, test_y, self.config.data_dir, gen,
                                    target_size=(27, 27), shuffle=False)
             predictions = []
-            for i in range(self.config.bayesian_iterations):
+            iterations = self.config.bayesian_iterations if self.config.bayesian else 1
+
+            for i in range(iterations):
                 predictions.append(self.model.predict_generator(test_gen, use_multiprocessing=True))
                 self.log('Bayesian Iteration: ' + str(i+1))
-            predictions = np.average(predictions, axis=0) if self.config.bayesian_iterations else predictions[0]
+            predictions = np.average(predictions, axis=0) if iterations > 1 else predictions[0]
 
             predicted_labels, labels = [], []
             for i in range(0, len(predictions), self.config.sample_size):
@@ -221,15 +201,18 @@ class Model:
         :return: A list of predictions for each cell.
         """
 
+        self.model = keras.models.load_model(self.config.model_path)
         gen = keras.preprocessing.image.ImageDataGenerator()
         data_x, data_y = data.sample_data(data.data_x, data.data_y)
-        data_gen = ImageLoader(data_x, data_y, self.config.data_dir, gen,
-                              target_size=(27, 27), shuffle=False)
+        data_gen = ImageLoader(data_x, data_y, self.config.data_dir, gen, target_size=(27, 27), shuffle=False)
+
         predictions = []
-        for i in range(self.config.bayesian_iterations):
+        iterations = self.config.bayesian_iterations if self.config.bayesian else 1
+
+        for i in range(iterations):
             predictions.append(self.model.predict_generator(data_gen, use_multiprocessing=True))
             self.log('Bayesian Iteration: ' + str(i + 1))
-        predictions = np.average(predictions, axis=0) if self.config.bayesian_iterations else predictions[0]
+        predictions = np.average(predictions, axis=0) if iterations > 1 else predictions[0]
 
         predicted_labels = []
         for i in range(0, len(predictions), self.config.sample_size):
