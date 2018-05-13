@@ -147,18 +147,16 @@ class Model:
         else:
             class_weights = None
 
-        self.model.save(self.config.model_path, overwrite=True)
-
-        # history = self.model.fit_generator(train_gen, verbose=0,
-        #                                    epochs=self.config.max_epochs,
-        #                                    validation_data=val_gen,
-        #                                    class_weight=class_weights,
-        #                                    callbacks=[EarlyStop(self.config.min_epochs,
-        #                                               self.config.batch_epochs,
-        #                                               self.config.training_threshold,
-        #                                               self.config.model_path,
-        #                                               self.log)],
-        #                                    use_multiprocessing=True)
+        history = self.model.fit_generator(train_gen, verbose=0,
+                                           epochs=self.config.max_epochs,
+                                           validation_data=val_gen,
+                                           class_weight=class_weights,
+                                           callbacks=[EarlyStop(self.config.min_epochs,
+                                                      self.config.batch_epochs,
+                                                      self.config.training_threshold,
+                                                      self.config.model_path,
+                                                      self.log)],
+                                           use_multiprocessing=True)
 
         if test:
             self.model = keras.models.load_model(self.config.model_path)
@@ -173,12 +171,14 @@ class Model:
                 self.log('Bayesian Iteration: ' + str(i+1))
             predictions = np.average(predictions, axis=0) if iterations > 1 else predictions[0]
 
-            predicted_labels, labels = [], []
+            predicted_averages, predicted_labels, labels = [], [], []
             for i in range(0, len(predictions), self.config.sample_size):
                 averages = method(predictions[i:(i + self.config.sample_size)], axis=0)
+                predicted_averages.append(averages)
                 predicted_labels.append(np.argmax(averages))
                 labels.append(data.test_y[i])
 
+            loss = metrics.log_loss(labels, predicted_averages, labels=[0, 1, 2, 3])
             recall = metrics.recall_score(labels, predicted_labels, average='micro')
             precision = metrics.precision_score(labels, predicted_labels, average='micro')
             f1_score = metrics.f1_score(labels, predicted_labels, average='micro')
@@ -192,7 +192,10 @@ class Model:
             message += ' Recall: {:.4f}'.format(recall)
             message += ' Precision: {:.4f}'.format(precision)
             message += ' F1-Score: {:.4f}'.format(f1_score)
+            message += ' Loss: {:.4f}'.format(loss)
             self.log(message)
+
+            return accuracy_score, accuracy, recall, precision, f1_score, loss
 
     def predict(self, data, method=np.average):
         """ Make cell predictions from the unlabelled dataset.
