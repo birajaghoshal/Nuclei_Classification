@@ -1,5 +1,6 @@
 import time
 import random
+import numpy as np
 from active_learner import ActiveLearner
 
 
@@ -18,7 +19,7 @@ class RandomLearner(ActiveLearner):
             self.log("\nCycle " + str(len(accuracies) + 1))
 
             # Trains a model with the training data.
-            accuracy, mean_accuracy, recall, precision, f1_score, loss = self.train()
+            accuracy, mean_accuracy, recall, precision, f1_score, loss = self.model.train(self.data)
 
             # Adds the metrics to the lists.
             accuracies.append(accuracy)
@@ -29,12 +30,19 @@ class RandomLearner(ActiveLearner):
             losses.append(loss)
 
             # Randomly adds data to the training data.
-            self.data.set_training_data(random.sample(list(range(len(self.data.data_y) / self.config.cell_patches)),
-                                                      self.config.update_size))
+            cell_patches = random.sample(list(range(len(self.data.data_y) / self.config.cell_patches)),
+                                         self.config.update_size)
+            self.data.set_training_data(cell_patches)
+
+            if self.config.pseudo_labels:
+                predictions = self.model.predict(self.data, np.average)
+                indices = [j for j, i in enumerate(predictions) if max(i) > self.config.pseudo_threshold]
+                self.data.add_pesudo_labels(indices)
+
             self.log("\n\n")
 
         # Trains the model with all the data.
-        accuracy, mean_accuracy, recall, precision, f1_score, loss = self.train()
+        accuracy, mean_accuracy, recall, precision, f1_score, loss = self.model.train(self.data)
 
         # Adds the metrics to the lists.
         accuracies.append(accuracy)

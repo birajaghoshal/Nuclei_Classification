@@ -20,6 +20,7 @@ class DataHandler:
         self.val_per = config.val_per
         self.verbose = config.verbose
         self.config = config
+        self.pesudo_indices = []
 
         # Loads the training data into the unannotated data stores.
         self.load_training_data(config.data_dir)
@@ -130,6 +131,7 @@ class DataHandler:
         # Sets the full list of indices
         full_indices = []
         for index in indices:
+            index *= self.config.cell_patches
             full_indices.append(list(range(index, index + self.config.cell_patches)))
 
         # Sets temparary lists to the data to be added.
@@ -160,8 +162,33 @@ class DataHandler:
         self.log("Validation Patches: " + str(len(self.val_y)))
 
     def sample_data(self, x, y):
+        """ Method for randomly sampling each cell within the inputted data.
+        :param x: The x data.
+        :param y: The y data.
+        :return: Sampled x and y data.
+        """
+
         indices = []
         for i in range(0, len(x), self.config.cell_patches):
             cell_indices = list(range(i, i + self.config.cell_patches))
-            indices += np.random.choice(cell_indices, self.config.sample_size).tolist()
+            indices += np.random.choice(cell_indices, self.config.sample_size, replace=False).tolist()
         return np.take(x, indices), np.take(y, indices)
+
+    def add_pesudo_labels(self, cell_indices):
+        """ Adds unlabelled cells to be used in training data.
+        :param cell_indices: The indices of the cells.to be added as pesudo labels
+        """
+
+        self.pesudo_indices = []
+        for cell_index in cell_indices:
+            index = cell_index * self.config.cell_patches
+            self.pesudo_indices += list(range(index, index + self.config.cell_patches))
+
+    def get_training_data(self):
+        """ Method for getting the data for training including pesudo labels and sampling.
+        :return: Two lists representing x and y data.
+        """
+
+        train_x = np.append(self.train_x, self.data_x[self.pesudo_indices])
+        train_y = np.append(self.train_y, self.data_y[self.pesudo_indices])
+        return self.sample_data(train_x, train_y)

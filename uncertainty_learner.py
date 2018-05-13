@@ -18,7 +18,7 @@ class UncertaintyLearner(ActiveLearner):
             self.log("\nCycle " + str(len(accuracies) + 1))
 
             # Trains a model with the training data.
-            accuracy, mean_accuracy, recall, precision, f1_score, loss = self.train()
+            accuracy, mean_accuracy, recall, precision, f1_score, loss = self.model.train(self.data)
 
             # Adds the metrics to the lists.
             accuracies.append(accuracy)
@@ -29,14 +29,18 @@ class UncertaintyLearner(ActiveLearner):
             losses.append(loss)
 
             # Makes predictions for each cell and selects the most uncertain cells.
-            predictions = self.predict(np.amin)
+            predictions = self.model.predict(self.data, np.amin)
             indices = [i[1] for i in sorted(((value, index) for index, value in enumerate(predictions)),
                                             reverse=True)[:self.config.update_size]]
             self.data.set_training_data(indices)
+            if self.config.pseudo_labels:
+                predictions = np.delete(predictions, indices)
+                indices = [j for j, i in enumerate(predictions) if max(i) > self.config.pseudo_threshold]
+                self.data.add_pesudo_labels(indices)
             self.log("\n\n")
 
         # Trains the model with all the data.
-        accuracy, mean_accuracy, recall, precision, f1_score, loss = self.train()
+        accuracy, mean_accuracy, recall, precision, f1_score, loss = self.model.train(self.data)
 
         # Adds the metrics to the lists.
         accuracies.append(accuracy)
