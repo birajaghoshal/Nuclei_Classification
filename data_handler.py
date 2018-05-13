@@ -132,7 +132,7 @@ class DataHandler:
         full_indices = []
         for index in indices:
             index *= self.config.cell_patches
-            full_indices.append(list(range(index, index + self.config.cell_patches)))
+            full_indices += list(range(index, index + self.config.cell_patches))
 
         # Sets temparary lists to the data to be added.
         temp_x = np.take(self.data_x, full_indices)

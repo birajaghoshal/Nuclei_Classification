@@ -133,7 +133,10 @@ class Model:
         gen = keras.preprocessing.image.ImageDataGenerator()
         train_x, train_y = data.get_training_data()
         val_x, val_y = data.sample_data(data.val_x, data.val_y)
-        self.log("Sampled Training Patches: " + str(len(train_x)))
+        if data.pesudo_indices != []:
+            self.log("Sampled Training Patches with Pseudo Labels: " + str(len(train_x)))
+        else:
+            self.log("Sampled Training Patches: " + str(len(train_x)))
         self.log("Sampled Validation Patches: " + str(len(val_x)))
         train_gen = ImageLoader(train_x, train_y, self.config.data_dir, gen,
                                 target_size=(27, 27), batch_size=self.config.batch_size)
@@ -217,8 +220,8 @@ class Model:
             self.log('Bayesian Iteration: ' + str(i + 1))
         predictions = np.average(predictions, axis=0) if iterations > 1 else predictions[0]
 
-        predicted_labels = []
+        predicted_averages = []
         for i in range(0, len(predictions), self.config.sample_size):
-            averages = method(predictions[i:(i + self.config.sample_size)], axis=0)
-            predicted_labels.append(np.argmax(averages))
-        return predicted_labels
+            predicted_averages.append(method(predictions[i:(i + self.config.sample_size)], axis=0))
+
+        return predicted_averages
