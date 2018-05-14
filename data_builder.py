@@ -14,7 +14,8 @@ def data_builder(in_dir, out_dir, patch_size, stride):
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
 
-    for img_num in range(start, start + len(os.listdir(in_dir))):
+    for file in os.listdir(in_dir):
+        img_num = int(file.split("img")[1])
         image = cv2.imread(in_dir + "img" + str(img_num) + "/img" + str(img_num) + ".bmp")
         border_image = cv2.copyMakeBorder(image, patch_size, patch_size, patch_size, patch_size, cv2.BORDER_WRAP)
         epi = io.loadmat(in_dir + "img" + str(img_num) + "/img" + str(img_num) + "_epithelial.mat")["detection"]
