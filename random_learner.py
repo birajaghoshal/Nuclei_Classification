@@ -30,14 +30,17 @@ class RandomLearner(ActiveLearner):
             losses.append(loss)
 
             # Randomly adds data to the training data.
-            cell_patches = random.sample(list(range(len(self.data.data_y) // self.config.cell_patches)),
-                                         self.config.update_size)
+            if self.config.update_size < (len(self.data.data_x) // self.config.update_size):
+                update = self.config.update_size
+            else:
+                update = len(self.data.data_x) // self.config.update_size
+
+            cell_patches = random.sample(list(range(len(self.data.data_y) // self.config.cell_patches)), update)
             self.data.set_training_data(cell_patches)
 
             if self.config.pseudo_labels:
                 predictions = self.model.predict(self.data, np.average)
-                indices = [j for j, i in enumerate(predictions) if max(i) > self.config.pseudo_threshold]
-                self.data.add_pesudo_labels(indices)
+                self.data.add_pesudo_labels(predictions)
 
             self.log("\n\n")
 
