@@ -117,17 +117,19 @@ class Model:
                 if (epoch + 1) >= self.min_epochs:
                     g_loss = 100 * ((self.val_losses[-1] / min(self.val_losses[:-1])) - 1)
                     t_progress = 1000 * ((sum(self.train_losses[-(self.batch+1):-1]) /
-                                          (self.batch * min(self.train_losses[--(self.batch+1):-1]))) - 1)
+                                          (self.batch * min(self.train_losses[-(self.batch+1):-1]))) - 1)
                     self.log_fn('Training Progress: {:.4}'.format(g_loss / t_progress))
                     if g_loss / t_progress > self.target:
                         self.log_fn('Stopped at epoch ' + str(epoch + 1))
                         self.model.stop_training = True
                     else:
-                        self.model.save(self.save_path, overwrite=True)
+                        self.model.save_weights(self.save_path, overwrite=True)
+                else:
+                    self.model.save_weights(self.save_path, overwrite=True)
 
         # Loads the existing Weights to the model.
-        if self.config.model_tuning and self.config.mode != 'supervised' and os.path.isdir(self.config.model_path):
-            self.model = keras.models.load_model(self.config.model_path)
+        if self.config.model_tuning and self.config.mode != 'supervised' and os.path.exists(self.config.model_path):
+            self.model.load_weights(self.config.model_path)
             self.log('Model Restored')
 
         gen = keras.preprocessing.image.ImageDataGenerator()
@@ -162,7 +164,7 @@ class Model:
                                            use_multiprocessing=True)
 
         if test:
-            self.model = keras.models.load_model(self.config.model_path)
+            self.model.load_weights(self.config.model_path)
             test_x, test_y = data.sample_data(data.test_x, data.test_y)
             test_gen = ImageLoader(test_x, test_y, self.config.data_dir, gen,
                                    target_size=(27, 27), shuffle=False)
@@ -175,7 +177,7 @@ class Model:
             predictions = np.average(predictions, axis=0) if iterations > 1 else predictions[0]
 
             predicted_averages, predicted_labels, labels = [], [], []
-            for i in range(0, len(predictions), self.config.sample_size):
+            for i in range(0, len(predictions), 1):#self.config.sample_size):
                 averages = method(predictions[i:(i + self.config.sample_size)], axis=0)
                 predicted_averages.append(averages)
                 predicted_labels.append(np.argmax(averages))
