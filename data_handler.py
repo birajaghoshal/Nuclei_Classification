@@ -1,7 +1,6 @@
-import random
 import numpy as np
-import tensorflow as tf
 from collections import Counter
+import sklearn.metrics as metrics
 
 
 class DataHandler:
@@ -45,6 +44,7 @@ class DataHandler:
         self.data_x = np.array(values[:, 0])
         self.data_x = np.array(["Training/" + i for i in self.data_x])
         self.data_y = values[:, 1].astype(int)
+        self.log("Loaded " + str(int(len(self.data_y) / self.config.cell_patches)) + " Unannotated Cells")
 
     def load_testing_data(self, data_dir):
         """ Loads the testing data to the testing data lists.
@@ -55,6 +55,7 @@ class DataHandler:
         self.test_x = np.array(values[:, 0])
         self.test_x = np.array(["Testing/" + i for i in self.test_x])
         self.test_y = values[:,1].astype(int)
+        self.log("Loaded " + str(int(len(self.test_y) / self.config.cell_patches)) + " Testing Cells")
 
     def balance(self, x_list, y_list):
         """ A method to balance a set of data.
@@ -174,15 +175,23 @@ class DataHandler:
             indices += np.random.choice(cell_indices, self.config.sample_size, replace=False).tolist()
         return np.take(x, indices), np.take(y, indices)
 
-    def add_pesudo_labels(self, cell_indices):
+    def add_pesudo_labels(self, predictions):
         """ Adds unlabelled cells to be used in training data.
         :param cell_indices: The indices of the cells.to be added as pesudo labels
         """
 
+        indices = [j for j, i in enumerate(predictions) if max(i) > self.config.pseudo_threshold]
         self.pesudo_indices = []
-        for cell_index in cell_indices:
+        for cell_index in indices:
             index = cell_index * self.config.cell_patches
             self.pesudo_indices += list(range(index, index + self.config.cell_patches))
+        self.log("Pesudo Cells: " + str(len(indices)))
+        self.log("Pesudo Patches: " + str(len(indices)) * self.config.cell_patches)
+        labels = self.data_y[indices]
+        predicted_labels = np.argmax(np.array(predictions)[indices], axis=1)
+        print(labels)
+        print(predicted_labels)
+        self.log("Pesudo Accuracy: " + str(float(metrics.accuracy_score(labels, predicted_labels))))
 
     def get_training_data(self):
         """ Method for getting the data for training including pesudo labels and sampling.
