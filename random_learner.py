@@ -30,10 +30,10 @@ class RandomLearner(ActiveLearner):
             losses.append(loss)
 
             # Randomly adds data to the training data.
-            if self.config.update_size < (len(self.data.data_x) // self.config.update_size):
+            if self.config.update_size * self.config.cell_patches< len(self.data.data_y):
                 update = self.config.update_size
             else:
-                update = len(self.data.data_x) // self.config.update_size
+                update = len(self.data.data_x) // self.config.cell_patches
 
             cell_patches = random.sample(list(range(len(self.data.data_y) // self.config.cell_patches)), update)
             self.data.set_training_data(cell_patches)

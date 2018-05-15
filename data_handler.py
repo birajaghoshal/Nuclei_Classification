@@ -76,21 +76,21 @@ class DataHandler:
         y_list = np.array([i for j, i in enumerate(y_list) if j not in indices])
         return x_list, y_list
 
-    def set_validation_set(self):
+    def set_validation_set(self, x, y):
         """ Sets the validation set from the training data.
         """
 
-        num_val = int((len(self.train_y) / self.config.cell_patches) * self.val_per)
+        num_val = int((len(y) / self.config.cell_patches) * self.val_per)
         indices = []
-        cell_indices = np.random.choice(list(range(len(self.train_y) // self.config.cell_patches)), num_val, False)
+        cell_indices = np.random.choice(list(range(len(y) // self.config.cell_patches)), num_val, False)
         for i in cell_indices:
             index = i * self.config.cell_patches
             indices += list(range(index, index + self.config.cell_patches))
 
-        val_x = np.take(self.train_x, indices)
-        val_y = np.take(self.train_y, indices)
-        self.train_x = np.delete(self.train_x, indices)
-        self.train_y = np.delete(self.train_y, indices)
+        val_x = np.take(x, indices)
+        val_y = np.take(y, indices)
+        x = np.delete(x, indices)
+        y = np.delete(y, indices)
 
         # val_x = np.array([i for j, i in enumerate(self.train_x) if j in indices])
         # val_y = np.array([i for j, i in enumerate(self.train_y) if j in indices])
@@ -103,6 +103,8 @@ class DataHandler:
             self.val_x = val_x
             self.val_y = val_y
 
+        return x, y
+
     def all_data(self):
         """ Sets all data from the unlabelled data to the training set.
         """
@@ -113,12 +115,12 @@ class DataHandler:
         self.data_x = np.array([])
         self.data_y = np.array([])
 
+        # Sets the validation set.
+        self.train_x, self.train_y = self.set_validation_set(self.train_x, self.train_y)
+
         # Balances the training data.
         if self.config.balance:
             self.train_x, self.train_y = self.balance(self.train_x, self.train_y)
-
-        # Sets the validation set.
-        self.set_validation_set()
 
         # Logs the number of patches.
         self.log("Training Patches: " + str(len(self.train_y)))
@@ -143,6 +145,9 @@ class DataHandler:
         self.data_x = np.delete(self.data_x, full_indices)
         self.data_y = np.delete(self.data_y, full_indices)#, axis=0)
 
+        # Sets the validation data.
+        temp_x, temp_y = self.set_validation_set(temp_x, temp_y)
+
         # Balances the data.
         if self.config.balance:
             temp_x, temp_y = self.balance(temp_x, temp_y)
@@ -154,9 +159,6 @@ class DataHandler:
         elif self.config.combine.lower() == "replace":
             self.train_x = temp_x
             self.train_y = temp_y
-
-        # Sets the validation data.
-        self.set_validation_set()
 
         # Logs the number of patches.
         self.log("Training Patches: " + str(len(self.train_y)))
