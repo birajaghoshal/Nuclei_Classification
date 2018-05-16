@@ -29,14 +29,21 @@ class UncertaintyLearner(ActiveLearner):
             losses.append(loss)
 
             # Makes predictions for each cell and selects the most uncertain cells.
-            predictions = self.model.predict(self.data, np.amin)
+            predictions, labels = self.model.predict(self.data, np.average)
+            if self.config.update_size * self.config.cell_patches< len(self.data.data_y):
+                update = self.config.update_size
+            else:
+                update = len(self.data.data_x) // self.config.cell_patches
             indices = [i[1] for i in sorted(((value, index) for index, value in enumerate(predictions)),
-                                            reverse=True)[:self.config.update_size]]
+                                            reverse=True)[:update]]
             self.data.set_training_data(indices)
-            if self.config.pseudo_labels:
-                predictions = np.delete(predictions, indices)
-                indices = [j for j, i in enumerate(predictions) if max(i) > self.config.pseudo_threshold]
-                self.data.add_pesudo_labels(indices)
+
+            predictions = np.delete(predictions, indices)
+            labels = np.delete(labels, indices)
+
+            if self.config.pseudo_labels and len(self.data.data_y) != 0:
+                self.data.add_pesudo_labels(predictions, labels)
+
             self.log("\n\n")
 
         # Trains the model with all the data.
