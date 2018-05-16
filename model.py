@@ -46,7 +46,7 @@ class Model:
         model = keras.layers.BatchNormalization()(model)
         model = keras.layers.MaxPool2D(padding="Same")(model)
         if self.config.bayesian:
-            model = keras.layers.Dropout(0.25)(model, training=True)
+            model = keras.layers.Dropout(0.5)(model, training=True)
 
         model = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu')(model)
         model = keras.layers.BatchNormalization()(model)
@@ -54,7 +54,7 @@ class Model:
         model = keras.layers.BatchNormalization()(model)
         model = keras.layers.MaxPool2D(padding='same')(model)
         if self.config.bayesian:
-            model = keras.layers.Dropout(0.25)(model, training=True)
+            model = keras.layers.Dropout(0.5)(model, training=True)
 
         model = keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu')(model)
         model = keras.layers.BatchNormalization()(model)
@@ -64,13 +64,13 @@ class Model:
         model = keras.layers.BatchNormalization()(model)
         model = keras.layers.MaxPool2D(padding='same')(model)
         if self.config.bayesian:
-            model = keras.layers.Dropout(0.25)(model, training=True)
+            model = keras.layers.Dropout(0.5)(model, training=True)
 
         model = keras.layers.Flatten()(model)
         model = keras.layers.Dense(1024, activation='relu')(model)
         model = keras.layers.BatchNormalization()(model)
         if self.config.bayesian:
-            model = keras.layers.Dropout(0.25)(model, training=True)
+            model = keras.layers.Dropout(0.5)(model, training=True)
         model = keras.layers.Dense(1024, activation='relu')(model)
         model = keras.layers.BatchNormalization()(model)
         outputs = keras.layers.Dense(self.num_classes, activation='softmax')(model)
@@ -123,8 +123,12 @@ class Model:
                         self.log_fn('Stopped at epoch ' + str(epoch + 1))
                         self.model.stop_training = True
                     else:
+                        if os.path.exists(self.save_path):
+                            os.remove(self.save_path)
                         self.model.save_weights(self.save_path, overwrite=True)
                 else:
+                    if os.path.exists(self.save_path):
+                       os.remove(self.save_path)
                     self.model.save_weights(self.save_path, overwrite=True)
 
         # Loads the existing Weights to the model.
@@ -177,11 +181,16 @@ class Model:
             predictions = np.average(predictions, axis=0) if iterations > 1 else predictions[0]
 
             predicted_averages, predicted_labels, labels = [], [], []
-            for i in range(0, len(predictions), 1):#self.config.sample_size):
+            for i in range(0, len(predictions), self.config.sample_size):
                 averages = method(predictions[i:(i + self.config.sample_size)], axis=0)
                 predicted_averages.append(averages)
                 predicted_labels.append(np.argmax(averages))
-                labels.append(data.test_y[i])
+                # label = data.test_y[i:i + self.config.sample_size]
+                # if len(np.unique(label)) > 1:
+                #     print("This is very bad")
+                labels.append(test_y[i])
+
+            thing = [i for i in range(len(predicted_labels)) if predicted_labels[i] != labels[i]]
 
             loss = metrics.log_loss(labels, predicted_averages, labels=[0, 1, 2, 3])
             recall = metrics.recall_score(labels, predicted_labels, average='micro')
@@ -209,7 +218,7 @@ class Model:
         :return: A list of predictions for each cell.
         """
 
-        self.model = keras.models.load_model(self.config.model_path)
+        self.model.load_weights(self.config.model_path)
         gen = keras.preprocessing.image.ImageDataGenerator()
         data_x, data_y = data.sample_data(data.data_x, data.data_y)
         data_gen = ImageLoader(data_x, data_y, self.config.data_dir, gen, target_size=(27, 27), shuffle=False)
@@ -222,8 +231,9 @@ class Model:
             self.log('Bayesian Iteration: ' + str(i + 1))
         predictions = np.average(predictions, axis=0) if iterations > 1 else predictions[0]
 
-        predicted_averages = []
+        predicted_averages, labels = [], []
         for i in range(0, len(predictions), self.config.sample_size):
             predicted_averages.append(method(predictions[i:(i + self.config.sample_size)], axis=0))
+            labels.append(data_y[i])
 
-        return predicted_averages
+        return predicted_averages, labels

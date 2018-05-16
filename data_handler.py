@@ -177,7 +177,7 @@ class DataHandler:
             indices += np.random.choice(cell_indices, self.config.sample_size, replace=False).tolist()
         return np.take(x, indices), np.take(y, indices)
 
-    def add_pesudo_labels(self, predictions):
+    def add_pesudo_labels(self, predictions, labels):
         """ Adds unlabelled cells to be used in training data.
         :param cell_indices: The indices of the cells.to be added as pesudo labels
         """
@@ -189,11 +189,8 @@ class DataHandler:
             self.pesudo_indices += list(range(index, index + self.config.cell_patches))
         self.log("Pesudo Cells: " + str(len(indices)))
         self.log("Pesudo Patches: " + str(len(indices)) * self.config.cell_patches)
-        labels = self.data_y[indices]
         predicted_labels = np.argmax(np.array(predictions)[indices], axis=1)
-        print(labels)
-        print(predicted_labels)
-        self.log("Pesudo Accuracy: " + str(float(metrics.accuracy_score(labels, predicted_labels))))
+        self.log("Pesudo Accuracy: " + str(float(metrics.accuracy_score(np.array(labels)[indices], predicted_labels))))
 
     def get_training_data(self):
         """ Method for getting the data for training including pesudo labels and sampling.

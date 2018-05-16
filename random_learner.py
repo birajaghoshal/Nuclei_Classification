@@ -38,9 +38,9 @@ class RandomLearner(ActiveLearner):
             cell_patches = random.sample(list(range(len(self.data.data_y) // self.config.cell_patches)), update)
             self.data.set_training_data(cell_patches)
 
-            if self.config.pseudo_labels:
-                predictions = self.model.predict(self.data, np.average)
-                self.data.add_pesudo_labels(predictions)
+            if self.config.pseudo_labels and len(self.data.data_y) != 0:
+                predictions, labels = self.model.predict(self.data, np.average)
+                self.data.add_pesudo_labels(predictions, labels)
 
             self.log("\n\n")
 
