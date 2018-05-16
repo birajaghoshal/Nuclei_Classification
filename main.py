@@ -29,7 +29,7 @@ def plotting(title, values, increment):
     plt.xlabel('Patches')
     plt.ylabel(title)
     plt.title(title)
-    plt.savefig(title + '.png')
+    plt.savefig(config.plot_dir + title + '.png')
     plt.clf()
     plt.cla()
     plt.close()
