@@ -106,6 +106,12 @@ def load_configs():
                         help="Boolean if the model should use pseudo labels to train with.")
     parser.add_argument("--pseudo_threshold", type=float, default=float(config["active"]["pseudo_threshold"]),
                         help="Floating point value representing the threshold for adding pseudo labels.")
+    parser.add_argument("--bootstrap_number", type=int, default=int(config["active"]["bootstrap_number"]),
+                        help="Integer representing the number of bootstraps.")
+    parser.add_argument("--bootstrap_size", type=int, default=int(config["active"]["bootstrap_size"]),
+                        help="Integer representing the size of bootstraps.")
+    parser.add_argument("--bootstrap_threshold", type=int, default=float(config["active"]["bootstrap_threshold"]),
+                        help="Integer representing the training threshold for the bootstrap models.")
 
     # Plotting Parameters
     parser.add_argument("--plot_dir", type=str, default=config["plotting"]["plot_dir"],
