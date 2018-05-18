@@ -4,7 +4,7 @@ import sklearn.metrics as metrics
 
 
 class DataHandler:
-    def __init__(self, config):
+    def __init__(self, config, load_data=True):
         """ The initialiser for the DataHandler class.
         :param config: A ArgumentParser object.
         """
@@ -22,8 +22,9 @@ class DataHandler:
         self.pesudo_indices = []
 
         # Loads the training data into the unannotated data stores.
-        self.load_training_data(config.data_dir)
-        self.load_testing_data(config.data_dir)
+        if load_data:
+            self.load_training_data(config.data_dir)
+            self.load_testing_data(config.data_dir)
 
     def log(self, message):
         """ Method to handle printing and logging of messages.
@@ -196,7 +197,28 @@ class DataHandler:
         """ Method for getting the data for training including pesudo labels and sampling.
         :return: Two lists representing x and y data.
         """
+        if self.config.mode != "bootstrap":
+            train_x = np.append(self.train_x, self.data_x[self.pesudo_indices])
+            train_y = np.append(self.train_y, self.data_y[self.pesudo_indices])
+            return self.sample_data(train_x, train_y)
+        else:
+            return self.sample_data(self.train_x, self.train_y)
 
+    def get_bootstraps(self):
         train_x = np.append(self.train_x, self.data_x[self.pesudo_indices])
         train_y = np.append(self.train_y, self.data_y[self.pesudo_indices])
-        return self.sample_data(train_x, train_y)
+
+        bootstraps = []
+        for _ in range(self.config.bootstrap_number):
+            indices = np.random.choice(range(0, len(train_y), self.config.cell_patches),
+                                       self.config.bootstrap_size, replace=True)
+            bootstrap_x = train_x[indices]
+            bootstrap_y = train_y[indices]
+            
+            data = DataHandler(self.config, False)
+            data.set_validation_set(bootstrap_x, bootstrap_y)
+            data.train_x = bootstrap_x
+            data.train_y = bootstrap_y
+            bootstraps.append(data)
+        return bootstraps
+
