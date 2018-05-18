@@ -41,6 +41,8 @@ class RandomLearner(ActiveLearner):
             if self.config.pseudo_labels and len(self.data.data_y) != 0:
                 predictions, labels = self.model.predict(self.data, np.average)
                 self.data.add_pesudo_labels(predictions, labels)
+            else:
+                self.data.pesudo_indices = []
 
             self.log("\n\n")
 

@@ -1,3 +1,4 @@
+import math
 import time
 import numpy as np
 from active_learner import ActiveLearner
@@ -34,15 +35,26 @@ class UncertaintyLearner(ActiveLearner):
                 update = self.config.update_size
             else:
                 update = len(self.data.data_x) // self.config.cell_patches
-            indices = [i[1] for i in sorted(((value, index) for index, value in enumerate(predictions)),
+
+            uncertainties = []
+            for prediction in predictions:
+                uncertainty = max(prediction)
+                for i in range(self.config.num_classes):
+                    uncertainty -= prediction[i] * math.log(prediction[i])
+                uncertainties.append(uncertainty)
+
+
+            indices = [i[1] for i in sorted(((value, index) for index, value in enumerate(uncertainties)),
                                             reverse=True)[:update]]
             self.data.set_training_data(indices)
 
-            predictions = np.delete(predictions, indices)
+            predictions = np.delete(predictions, indices, axis=0)
             labels = np.delete(labels, indices)
 
             if self.config.pseudo_labels and len(self.data.data_y) != 0:
                 self.data.add_pesudo_labels(predictions, labels)
+            else:
+                self.data.pesudo_indices = []
 
             self.log("\n\n")
 
