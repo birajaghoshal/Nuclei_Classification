@@ -140,7 +140,7 @@ class Model:
         gen = keras.preprocessing.image.ImageDataGenerator()
         train_x, train_y = data.get_training_data()
         val_x, val_y = data.sample_data(data.val_x, data.val_y)
-        if data.pesudo_indices != []:
+        if data.pseudo_indices != []:
             self.log("Sampled Training Patches with Pseudo Labels: " + str(len(train_x)))
         else:
             self.log("Sampled Training Patches: " + str(len(train_x)))
