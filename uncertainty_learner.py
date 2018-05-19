@@ -31,7 +31,7 @@ class UncertaintyLearner(ActiveLearner):
 
             # Makes predictions for each cell and selects the most uncertain cells.
             predictions, labels = self.model.predict(self.data, np.average)
-            if self.config.update_size * self.config.cell_patches< len(self.data.data_y):
+            if self.config.update_size * self.config.cell_patches < len(self.data.data_y):
                 update = self.config.update_size
             else:
                 update = len(self.data.data_x) // self.config.cell_patches
@@ -54,7 +54,7 @@ class UncertaintyLearner(ActiveLearner):
             if self.config.pseudo_labels and len(self.data.data_y) != 0:
                 self.data.add_pesudo_labels(predictions, labels)
             else:
-                self.data.pesudo_indices = []
+                self.data.pseudo_indices = []
 
             self.log("\n\n")
 

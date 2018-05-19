@@ -42,7 +42,7 @@ class RandomLearner(ActiveLearner):
                 predictions, labels = self.model.predict(self.data, np.average)
                 self.data.add_pesudo_labels(predictions, labels)
             else:
-                self.data.pesudo_indices = []
+                self.data.pseudo_indices = []
 
             self.log("\n\n")
 

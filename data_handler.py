@@ -19,7 +19,7 @@ class DataHandler:
         self.val_per = config.val_per
         self.verbose = config.verbose
         self.config = config
-        self.pesudo_indices = []
+        self.pseudo_indices = []
 
         # Loads the training data into the unannotated data stores.
         if load_data:
@@ -184,10 +184,10 @@ class DataHandler:
         """
 
         indices = [j for j, i in enumerate(predictions) if max(i) > self.config.pseudo_threshold]
-        self.pesudo_indices = []
+        self.pseudo_indices = []
         for cell_index in indices:
             index = cell_index * self.config.cell_patches
-            self.pesudo_indices += list(range(index, index + self.config.cell_patches))
+            self.pseudo_indices += list(range(index, index + self.config.cell_patches))
         self.log("Pesudo Cells: " + str(len(indices)))
         self.log("Pesudo Patches: " + str(len(indices)) * self.config.cell_patches)
         predicted_labels = np.argmax(np.array(predictions)[indices], axis=1)
@@ -197,23 +197,27 @@ class DataHandler:
         """ Method for getting the data for training including pesudo labels and sampling.
         :return: Two lists representing x and y data.
         """
-        if self.config.mode != "bootstrap":
-            train_x = np.append(self.train_x, self.data_x[self.pesudo_indices])
-            train_y = np.append(self.train_y, self.data_y[self.pesudo_indices])
-            return self.sample_data(train_x, train_y)
-        else:
-            return self.sample_data(self.train_x, self.train_y)
 
-    def get_bootstraps(self):
-        train_x = np.append(self.train_x, self.data_x[self.pesudo_indices])
-        train_y = np.append(self.train_y, self.data_y[self.pesudo_indices])
+        if self.config.mode != "bootstrap":
+            train_x = np.append(self.train_x, self.data_x[self.pseudo_indices])
+            train_y = np.append(self.train_y, self.data_y[self.pseudo_indices])
+            return train_x, train_y
+        else:
+            return self.train_x, self.train_y
+
+    def get_bootstraps(self, data_x, data_y):
+        """
+        :param data_x:
+        :param data_y:
+        :return:
+        """
 
         bootstraps = []
         for _ in range(self.config.bootstrap_number):
-            indices = np.random.choice(range(0, len(train_y), self.config.cell_patches),
+            indices = np.random.choice(range(0, len(data_y), self.config.cell_patches),
                                        self.config.bootstrap_size, replace=True)
-            bootstrap_x = train_x[indices]
-            bootstrap_y = train_y[indices]
+            bootstrap_x = data_x[indices]
+            bootstrap_y = data_y[indices]
             
             data = DataHandler(self.config, False)
             data.set_validation_set(bootstrap_x, bootstrap_y)

@@ -85,11 +85,10 @@ class Model:
         model.compile(optimizer=optimiser, loss='categorical_crossentropy', metrics=['accuracy'])
         return model
 
-    def train(self, data, test=True, experiment="0", method=np.average):
+    def train(self, data, test=True, method=np.average):
         """ The main training loop for the model.
         :param data: A dataset object.
         :param test: Boolean if the model should be tested.
-        :param experiment: A string describing the experiment that is running.
         :return: Training metrics, accuracy, mean class accuray, recall, precision, f1-score and loss.
         """
 
@@ -123,13 +122,15 @@ class Model:
                         self.log_fn('Stopped at epoch ' + str(epoch + 1))
                         self.model.stop_training = True
                     else:
-                        if os.path.exists(self.save_path):
-                            os.remove(self.save_path)
-                        self.model.save_weights(self.save_path, overwrite=True)
+                        if self.save_path != '':
+                            if os.path.exists(self.save_path):
+                                os.remove(self.save_path)
+                            self.model.save_weights(self.save_path, overwrite=True)
                 else:
-                    if os.path.exists(self.save_path):
-                       os.remove(self.save_path)
-                    self.model.save_weights(self.save_path, overwrite=True)
+                    if self.save_path != '':
+                        if os.path.exists(self.save_path):
+                           os.remove(self.save_path)
+                        self.model.save_weights(self.save_path, overwrite=True)
 
         # Loads the existing Weights to the model.
         if self.config.model_tuning and self.config.mode != 'supervised' and os.path.exists(self.config.model_path):
@@ -163,7 +164,7 @@ class Model:
                                            callbacks=[EarlyStop(self.config.min_epochs,
                                                       self.config.batch_epochs,
                                                       self.config.training_threshold,
-                                                      self.config.model_path,
+                                                      self.config.model_path if test else '',
                                                       self.log)],
                                            use_multiprocessing=True)
 
@@ -185,12 +186,7 @@ class Model:
                 averages = method(predictions[i:(i + self.config.sample_size)], axis=0)
                 predicted_averages.append(averages)
                 predicted_labels.append(np.argmax(averages))
-                # label = data.test_y[i:i + self.config.sample_size]
-                # if len(np.unique(label)) > 1:
-                #     print("This is very bad")
                 labels.append(test_y[i])
-
-            thing = [i for i in range(len(predicted_labels)) if predicted_labels[i] != labels[i]]
 
             loss = metrics.log_loss(labels, predicted_averages, labels=[0, 1, 2, 3])
             recall = metrics.recall_score(labels, predicted_labels, average='micro')
@@ -210,6 +206,25 @@ class Model:
             self.log(message)
 
             return accuracy_score, accuracy, recall, precision, f1_score, loss
+        else:
+            gen = keras.preprocessing.image.ImageDataGenerator()
+            data_x, data_y = data.sample_data(data.data_x, data.data_y)
+            data_gen = ImageLoader(data_x, data_y, self.config.data_dir, gen, target_size=(27, 27), shuffle=False)
+
+            predictions = []
+            iterations = self.config.bayesian_iterations if self.config.bayesian else 1
+
+            for i in range(iterations):
+                predictions.append(self.model.predict_generator(data_gen, use_multiprocessing=True))
+                self.log('Bayesian Iteration: ' + str(i + 1))
+            predictions = np.average(predictions, axis=0) if iterations > 1 else predictions[0]
+
+            predicted_averages, labels = [], []
+            for i in range(0, len(predictions), self.config.sample_size):
+                predicted_averages.append(method(predictions[i:(i + self.config.sample_size)], axis=0))
+                labels.append(data_y[i])
+
+            return predicted_averages, labels
 
     def predict(self, data, method=np.average):
         """ Make cell predictions from the unlabelled dataset.
