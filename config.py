@@ -112,6 +112,8 @@ def load_configs():
                         help="Integer representing the size of bootstraps.")
     parser.add_argument("--bootstrap_threshold", type=int, default=float(config["active"]["bootstrap_threshold"]),
                         help="Integer representing the training threshold for the bootstrap models.")
+    parser.add_argument("--shortlist", type=int, default=int(config["active"]["shortlist"]),
+                        help="Integer representing the shortlist size for the bootstrap models")
 
     # Plotting Parameters
     parser.add_argument("--plot_dir", type=str, default=config["plotting"]["plot_dir"],
