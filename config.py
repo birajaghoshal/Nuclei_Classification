@@ -101,6 +101,8 @@ def load_configs():
                         help="Boolean if the model should be fine tuning each iteration.")
     parser.add_argument("--update_size", type=int, default=int(config["active"]["update_size"]),
                         help="Integer representing the number of items to be labelled each update.")
+    parser.add_argument("--max_updates", type=int, default=int(config["active"]["max_updates"]),
+                        help="Integer representing the maximum number of updates.")
     parser.add_argument("--pseudo_labels", action="store_true",
                         default=config["active"]["pseudo_labels"].lower() == "true",
                         help="Boolean if the model should use pseudo labels to train with.")
