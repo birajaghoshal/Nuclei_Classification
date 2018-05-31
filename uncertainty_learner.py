@@ -15,7 +15,7 @@ class UncertaintyLearner(ActiveLearner):
         start_time = time.clock()
 
         # Loops until all the data has been read.
-        while len(self.data.data_y) != 0:
+        while len(self.data.data_y) != 0 and len(accuracies) < self.config.max_updates:
             self.log("\nCycle " + str(len(accuracies) + 1))
 
             # Trains a model with the training data.
