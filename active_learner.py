@@ -1,6 +1,3 @@
-import copy
-
-
 class ActiveLearner:
     def __init__(self, data, model, config):
         """ Initialiser for the ActiveLearner Class.

@@ -173,7 +173,7 @@ class DataHandler:
         """
 
         indices = []
-        for i in range(0, len(x), self.config.cell_patches):
+        for i in range(0, len(x) - 1, self.config.cell_patches):
             cell_indices = list(range(i, i + self.config.cell_patches))
             indices += np.random.choice(cell_indices, self.config.sample_size, replace=False).tolist()
         return np.take(x, indices), np.take(y, indices)
@@ -189,7 +189,7 @@ class DataHandler:
             index = cell_index * self.config.cell_patches
             self.pseudo_indices += list(range(index, index + self.config.cell_patches))
         self.log("Pesudo Cells: " + str(len(indices)))
-        self.log("Pesudo Patches: " + str(len(indices)) * self.config.cell_patches)
+        self.log("Pesudo Patches: " + str(len(indices) * self.config.cell_patches))
         predicted_labels = np.argmax(np.array(predictions)[indices], axis=1)
         self.log("Pesudo Accuracy: " + str(float(metrics.accuracy_score(np.array(labels)[indices], predicted_labels))))
 
@@ -205,24 +205,33 @@ class DataHandler:
         else:
             return self.train_x, self.train_y
 
-    def get_bootstraps(self, data_x, data_y):
-        """
-        :param data_x:
-        :param data_y:
-        :return:
+    def get_bootstraps(self, data_x, data_y, shortlist_indices):
+        """ Method for extracting bootstraped data handelers.
+        :param data_x: A list of data
+        :param data_y: A list of labels
+        :return: A list of data handelers
         """
 
         bootstraps = []
         for _ in range(self.config.bootstrap_number):
-            indices = np.random.choice(range(0, len(data_y), self.config.cell_patches),
+            indices = np.random.choice(range(0, len(data_y // self.config.cell_patches), self.config.cell_patches),
                                        self.config.bootstrap_size, replace=True)
-            bootstrap_x = data_x[indices]
-            bootstrap_y = data_y[indices]
+            full_indices = []
+            for index in indices:
+                full_indices += list(range(index, index + self.config.cell_patches))
+
+            bootstrap_x = data_x[full_indices]
+            bootstrap_y = data_y[full_indices]
             
             data = DataHandler(self.config, False)
-            data.set_validation_set(bootstrap_x, bootstrap_y)
+            bootstrap_x, bootstrap_y = data.set_validation_set(bootstrap_x, bootstrap_y)
             data.train_x = bootstrap_x
             data.train_y = bootstrap_y
+            full_indices = []
+            for i in shortlist_indices:
+                full_indices += list(range(i, i + self.config.cell_patches))
+            data.data_x = self.data_x[full_indices]
+            data.data_y = self.data_y[full_indices]
             bootstraps.append(data)
         return bootstraps
 

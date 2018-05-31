@@ -36,6 +36,9 @@ class BootStrap_Learner(ActiveLearner):
             else:
                 self.data.pseudo_indices = []
 
+            train_x = np.append(self.data.train_x, self.data.data_x[self.data.pseudo_indices])
+            train_y = np.append(self.data.train_y, self.data.data_y[self.data.pseudo_indices])
+
             if self.config.shortlist < len(self.data.data_y):
                 update = self.config.update_size
             else:
@@ -45,19 +48,18 @@ class BootStrap_Learner(ActiveLearner):
             for prediction in predictions:
                 uncertainty = max(prediction)
                 for i in range(self.config.num_classes):
-                    uncertainty -= prediction[i] * math.log(prediction[i])
+                    if prediction[i] != 0.0:
+                        uncertainty -= prediction[i] * math.log(prediction[i])
                 uncertainties.append(uncertainty)
 
             indices = [i[1] for i in sorted(((value, index) for index, value in enumerate(uncertainties)),
                                             reverse=True)[:update]]
 
-            train_x = np.append(self.data.train_x[indices], self.data.data_x[self.data.pseudo_indices])
-            train_y = np.append(self.data.train_y[indices], self.data.data_y[self.data.pseudo_indices])
-
-            bootstraps = self.data.get_bootstraps(train_x, train_y)
+            bootstraps = self.data.get_bootstraps(train_x, train_y, indices)
             cell_predictions = []
-            for bootstrap in bootstraps:
-                predictions, _ = self.model.train(bootstrap, test=False)
+            for i in range(len(bootstraps)):
+                self.log("\nBootstrap " + str(i + 1))
+                predictions, _ = self.model.train(bootstraps[i], test=False)
                 cell_predictions.append(predictions)
             cell_predictions = np.average(cell_predictions, axis=0)
 
@@ -77,14 +79,6 @@ class BootStrap_Learner(ActiveLearner):
                                             reverse=True)[:update]]
 
             self.data.set_training_data(indices)
-
-            cell_predictions = np.delete(cell_predictions, indices, axis=0)
-            labels = np.delete(labels, indices)
-
-            if self.config.pseudo_indices and len(self.data.data_y) != 0:
-                self.data.add_pesudo_labels(predictions, labels)
-            else:
-                self.data.pseudo_indices = []
 
             self.log("\n\n")
 

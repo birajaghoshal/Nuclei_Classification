@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from data_handler import DataHandler
 from random_learner import RandomLearner
 from bootstrap_learner import BootStrap_Learner
+from supervised_learner import SupervisedLearner
 from uncertainty_learner import UncertaintyLearner
 
 
@@ -38,19 +39,17 @@ def plotting(title, values, increment):
 
 if __name__ == "__main__":
     config = config.load_configs()
+    model = Model(config)
+    data_handler = DataHandler(config)
+
     if config.mode.lower() == "supervised":
-        config.sample_size = config.cell_patches
-        model = Model(config)
-        data_handler = DataHandler(config)
-        data_handler.all_data()
-        model.train(data_handler)
+        learner = SupervisedLearner(data_handler, model, config)
+        learner.run()
 
     elif config.mode.lower() in ["random", "uncertainty", "bootstrap"]:
-        model = Model(config)
-        data_handler = DataHandler(config)
+
         data_handler.set_training_data(np.random.choice(list(range(len(data_handler.data_x) // config.cell_patches)),
                                                         config.update_size, replace=False))
-
         if config.mode.lower() == "random":
             learner = RandomLearner(data_handler, model, config)
         elif config.mode.lower() == "uncertainty":
@@ -60,11 +59,4 @@ if __name__ == "__main__":
 
         accuracies, mean_accuracies, recalls, precisions, f1_scores, losses = learner.run()
 
-        plotting(config.mode + "_accuracy", accuracies, config.update_size)
-        plotting(config.mode + "_mean_class_accuracy", mean_accuracies, config.update_size)
-        plotting(config.mode + "_recall", recalls, config.update_size)
-        plotting(config.mode + "_precision", precisions, config.update_size)
-        plotting(config.mode + "_f1-score", f1_scores, config.update_size)
-        plotting(config.mode + "_loss", losses, config.update_size)
-
-        log(config, "---------- End ----------\n\n")
+    log(config, "---------- End ----------\n\n")

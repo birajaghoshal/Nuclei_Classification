@@ -163,7 +163,7 @@ class Model:
                                            class_weight=class_weights,
                                            callbacks=[EarlyStop(self.config.min_epochs,
                                                       self.config.batch_epochs,
-                                                      self.config.training_threshold,
+                                                      self.config.training_threshold if test else  self.config.bootstrap_threshold,
                                                       self.config.model_path if test else '',
                                                       self.log)],
                                            use_multiprocessing=True)
