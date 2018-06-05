@@ -31,8 +31,9 @@ class UncertaintyLearner(ActiveLearner):
 
             # Makes predictions for each cell and selects the most uncertain cells.
             predictions, labels = self.model.predict(self.data, np.average)
-            if self.config.update_size * self.config.cell_patches < len(self.data.data_y):
-                update = self.config.update_size
+            update_size = int(np.around(len(self.data.data_y) * self.config.update_size))
+            if update_size * self.config.cell_patches < len(self.data.data_y):
+                update = update_size
             else:
                 update = len(self.data.data_x) // self.config.cell_patches
 

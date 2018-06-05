@@ -33,8 +33,9 @@ class SupervisedLearner(ActiveLearner):
             f1_scores.append(f1_score)
             losses.append(loss)
 
-            if self.config.update_size * self.config.cell_patches < len(self.data.data_y):
-                update += self.config.update_size
+            update_size = int(np.around(len(self.data.data_y) * self.config.update_size))
+            if update_size * self.config.cell_patches < len(self.data.data_y):
+                update += update_size
             else:
                 update += len(self.data.data_x) // self.config.cell_patches
 

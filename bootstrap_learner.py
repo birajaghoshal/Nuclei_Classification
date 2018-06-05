@@ -40,7 +40,7 @@ class BootStrap_Learner(ActiveLearner):
             train_y = np.append(self.data.train_y, self.data.data_y[self.data.pseudo_indices])
 
             if self.config.shortlist < len(self.data.data_y):
-                update = self.config.update_size
+                update = self.config.shortlist
             else:
                 update = len(self.data.data_x) // self.config.cell_patches
 
@@ -63,8 +63,9 @@ class BootStrap_Learner(ActiveLearner):
                 cell_predictions.append(predictions)
             cell_predictions = np.average(cell_predictions, axis=0)
 
-            if self.config.update_size * self.config.cell_patches < len(self.data.data_y):
-                update = self.config.update_size
+            update_size = int(np.around(len(self.data.data_y) * self.config.update_size))
+            if update_size * self.config.cell_patches < len(self.data.data_y):
+                update = update_size
             else:
                 update = len(self.data.data_x) // self.config.cell_patches
 
