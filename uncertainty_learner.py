@@ -32,7 +32,7 @@ class UncertaintyLearner(ActiveLearner):
 
             # Makes predictions for each cell and selects the most uncertain cells.
             predictions, labels = self.model.predict(self.data, np.average)
-            update_size = int(np.around(len(self.data.data_y) * self.config.update_size))
+            update_size = int(np.around(len(self.data.train_y) * self.config.update_per) // self.config.cell_patches)
             if update_size * self.config.cell_patches < len(self.data.data_y):
                 update = update_size
             else:
@@ -42,11 +42,14 @@ class UncertaintyLearner(ActiveLearner):
             for prediction in predictions:
                 uncertainty = max(prediction)
                 for i in range(self.config.num_classes):
-                    uncertainty -= prediction[i] * math.log(prediction[i])
+                    uncertainty -= prediction[i] * math.log(prediction[i]) if prediction[i] != 0 else 0
                 uncertainties.append(uncertainty)
 
             if self.config.selection.lower() == "stochastic":
-                indices = np.random.choice(list(range(len(uncertainties))), update, p=uncertainties)
+                scoreMatExp = np.exp(np.asarray(uncertainties))
+                uncertainty_softmax = scoreMatExp / scoreMatExp.sum(0)
+                print(np.sum(uncertainty_softmax))
+                indices = np.random.choice(list(range(len(uncertainties))), update, p=uncertainty_softmax)
             elif self.config.selection.lower() == "mixed":
                 update = update // 2
                 indices_1 = [i[1] for i in sorted(((value, index) for index, value in enumerate(uncertainties)),
