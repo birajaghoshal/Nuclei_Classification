@@ -1,5 +1,6 @@
 import math
 import time
+import random
 import numpy as np
 from active_learner import ActiveLearner
 
@@ -44,8 +45,14 @@ class UncertaintyLearner(ActiveLearner):
                     uncertainty -= prediction[i] * math.log(prediction[i])
                 uncertainties.append(uncertainty)
 
-            if self.config.stochastic:
+            if self.config.selection.lower() == "stochastic":
                 indices = np.random.choice(list(range(len(uncertainties))), update, p=uncertainties)
+            elif self.config.selection.lower() == "mixed":
+                update = update // 2
+                indices_1 = [i[1] for i in sorted(((value, index) for index, value in enumerate(uncertainties)),
+                                                  reverse=True)[:update]]
+                indices_2 = random.sample(list(range(len(self.data.data_y) // self.config.cell_patches)), update)
+                indices = indices_1 + indices_2
             else:
                 indices = [i[1] for i in sorted(((value, index) for index, value in enumerate(uncertainties)),
                                                 reverse=True)[:update]]
