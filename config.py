@@ -5,7 +5,7 @@ from configparser import ConfigParser
 
 def load_configs():
     """ Loads the arguments from the command line and config file.
-    :return:
+    :return: A ArgumentParser object.
     """
 
     # Sets the description of the program and creates an ArgumentParser to read command line arguments.
@@ -99,22 +99,30 @@ def load_configs():
     parser.add_argument("--model_tuning", action="store_true",
                         default=config["active"]["model_tuning"].lower() == "true",
                         help="Boolean if the model should be fine tuning each iteration.")
-    parser.add_argument("--update_size", type=int, default=int(config["active"]["update_size"]),
-                        help="Integer representing the number of items to be labelled each update.")
+    parser.add_argument("--first_update", type=int, default=int(config["active"]["first_update"]),
+                        help="Integer representing the number of items to be labelled in the first update.")
+    parser.add_argument("--max_update_size", type=int, default=int(config["active"]["max_update_size"]),
+                        help="Integer representing the maximum update size.")
+    parser.add_argument("--update_per", type=float, default=float(config["active"]["update_per"]),
+                        help="Floating point value representing the percentage of data to be labelled each update.")
     parser.add_argument("--max_updates", type=int, default=int(config["active"]["max_updates"]),
                         help="Integer representing the maximum number of updates.")
+
+    # Pseudo Labels Parameters
     parser.add_argument("--pseudo_labels", action="store_true",
-                        default=config["active"]["pseudo_labels"].lower() == "true",
+                        default=config["pseudo"]["pseudo_labels"].lower() == "true",
                         help="Boolean if the model should use pseudo labels to train with.")
-    parser.add_argument("--pseudo_threshold", type=float, default=float(config["active"]["pseudo_threshold"]),
+    parser.add_argument("--pseudo_threshold", type=float, default=float(config["pseudo"]["pseudo_threshold"]),
                         help="Floating point value representing the threshold for adding pseudo labels.")
-    parser.add_argument("--bootstrap_number", type=int, default=int(config["active"]["bootstrap_number"]),
+
+    # Bootstrap Parameters
+    parser.add_argument("--bootstrap_number", type=int, default=int(config["bootstrap"]["bootstrap_number"]),
                         help="Integer representing the number of bootstraps.")
-    parser.add_argument("--bootstrap_size", type=int, default=int(config["active"]["bootstrap_size"]),
+    parser.add_argument("--bootstrap_size", type=int, default=int(config["bootstrap"]["bootstrap_size"]),
                         help="Integer representing the size of bootstraps.")
-    parser.add_argument("--bootstrap_threshold", type=int, default=float(config["active"]["bootstrap_threshold"]),
+    parser.add_argument("--bootstrap_threshold", type=int, default=float(config["bootstrap"]["bootstrap_threshold"]),
                         help="Integer representing the training threshold for the bootstrap models.")
-    parser.add_argument("--shortlist", type=int, default=int(config["active"]["shortlist"]),
+    parser.add_argument("--shortlist", type=int, default=int(config["bootstrap"]["shortlist"]),
                         help="Integer representing the shortlist size for the bootstrap models")
 
     # Plotting Parameters
