@@ -44,9 +44,12 @@ class UncertaintyLearner(ActiveLearner):
                     uncertainty -= prediction[i] * math.log(prediction[i])
                 uncertainties.append(uncertainty)
 
+            if self.config.stochastic:
+                indices = np.random.choice(list(range(len(uncertainties))), update, p=uncertainties)
+            else:
+                indices = [i[1] for i in sorted(((value, index) for index, value in enumerate(uncertainties)),
+                                                reverse=True)[:update]]
 
-            indices = [i[1] for i in sorted(((value, index) for index, value in enumerate(uncertainties)),
-                                            reverse=True)[:update]]
             self.data.set_training_data(indices)
 
             predictions = np.delete(predictions, indices, axis=0)

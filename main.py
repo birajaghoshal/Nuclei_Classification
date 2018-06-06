@@ -49,7 +49,7 @@ if __name__ == "__main__":
     elif config.mode.lower() in ["random", "uncertainty", "bootstrap"]:
 
         data_handler.set_training_data(np.random.choice(list(range(len(data_handler.data_x) // config.cell_patches)),
-                                                        config.update_size, replace=False))
+                                                        config.first_update, replace=False))
         if config.mode.lower() == "random":
             learner = RandomLearner(data_handler, model, config)
         elif config.mode.lower() == "uncertainty":
