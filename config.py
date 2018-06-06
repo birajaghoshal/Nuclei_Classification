@@ -107,9 +107,8 @@ def load_configs():
                         help="Floating point value representing the percentage of data to be labelled each update.")
     parser.add_argument("--max_updates", type=int, default=int(config["active"]["max_updates"]),
                         help="Integer representing the maximum number of updates.")
-    parser.add_argument("--stochastic", action="store_true",
-                        default=config["active"]["stochastic"].lower() == "true",
-                        help="Boolean if the updates should be stochastic.")
+    parser.add_argument("--selection", type=str, default=config["active"]["selection"],
+                        help="The method for data to be selected, stochastic, mixed or uncertain.")
 
     # Pseudo Labels Parameters
     parser.add_argument("--pseudo_labels", action="store_true",
