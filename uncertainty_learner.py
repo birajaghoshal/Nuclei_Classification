@@ -34,7 +34,10 @@ class UncertaintyLearner(ActiveLearner):
             predictions, labels = self.model.predict(self.data, np.average)
             update_size = int(np.around(len(self.data.train_y) * self.config.update_per) // self.config.cell_patches)
             if update_size * self.config.cell_patches < len(self.data.data_y):
-                update = update_size
+                if update_size > self.config.max_update_size:
+                    update = self.config.max_update_size
+                else:
+                    update = update_size
             else:
                 update = len(self.data.data_x) // self.config.cell_patches
 

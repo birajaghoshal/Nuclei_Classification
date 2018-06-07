@@ -13,7 +13,7 @@ class SupervisedLearner(ActiveLearner):
         accuracies, mean_accuracies, recalls, precisions, f1_scores, losses = [], [], [], [], [], []
         start_time = time.clock()
 
-        update = self.config.update_size
+        update = self.config.first_update
 
         self.data.set_training_data(np.random.choice(list(range(len(self.data.data_x) // self.config.cell_patches)),
                                                      update, replace=False))
@@ -33,9 +33,12 @@ class SupervisedLearner(ActiveLearner):
             f1_scores.append(f1_score)
             losses.append(loss)
 
-            update_size = int(np.around(len(self.data.data_y) * self.config.update_size))
+            update_size = int(np.around(len(self.data.train_y) * self.config.update_per) // self.config.cell_patches)
             if update_size * self.config.cell_patches < len(self.data.data_y):
-                update += update_size
+                if update_size > self.config.max_update_size:
+                    update += self.config.max_update_size
+                else:
+                    update += update_size
             else:
                 update += len(self.data.data_x) // self.config.cell_patches
 
