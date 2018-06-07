@@ -1,7 +1,9 @@
+import os
 import config
 import numpy as np
 from model import Model
 import matplotlib.pyplot as plt
+from autoencoder import Autoencoder
 from data_handler import DataHandler
 from random_learner import RandomLearner
 from bootstrap_learner import BootStrap_Learner
@@ -42,11 +44,18 @@ if __name__ == "__main__":
     model = Model(config)
     data_handler = DataHandler(config)
 
+    if os.path.isfile(config.model_path):
+        os.remove(config.model_path)
+
     if config.mode.lower() == "supervised":
         learner = SupervisedLearner(data_handler, model, config)
         learner.run()
 
     elif config.mode.lower() in ["random", "uncertainty", "bootstrap"]:
+
+        if config.auto_init:
+            auto = Autoencoder(config)
+            auto.train(data_handler)
 
         data_handler.set_training_data(np.random.choice(list(range(len(data_handler.data_x) // config.cell_patches)),
                                                         config.first_update, replace=False))

@@ -40,40 +40,40 @@ class Model:
 
     def create_model(self):
         inputs = keras.layers.Input(self.input_shape)
-        model = keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
+        model = keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', name="conv1.1")(inputs)
         model = keras.layers.BatchNormalization()(model)
-        model = keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same')(model)
+        model = keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same', name="conv1.2")(model)
         model = keras.layers.BatchNormalization()(model)
         model = keras.layers.MaxPool2D(padding="Same")(model)
         if self.config.bayesian:
             model = keras.layers.Dropout(0.5)(model, training=True)
 
-        model = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu')(model)
+        model = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu', name="conv2.1")(model)
         model = keras.layers.BatchNormalization()(model)
-        model = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu')(model)
+        model = keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu', name="conv2.2")(model)
         model = keras.layers.BatchNormalization()(model)
         model = keras.layers.MaxPool2D(padding='same')(model)
         if self.config.bayesian:
             model = keras.layers.Dropout(0.5)(model, training=True)
 
-        model = keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu')(model)
+        model = keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu', name="conv3.1")(model)
         model = keras.layers.BatchNormalization()(model)
-        model = keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu')(model)
+        model = keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu', name="conv3.2")(model)
         model = keras.layers.BatchNormalization()(model)
-        model = keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu')(model)
+        model = keras.layers.Conv2D(256, (3, 3), padding='same', activation='relu', name="conv3.3")(model)
         model = keras.layers.BatchNormalization()(model)
         model = keras.layers.MaxPool2D(padding='same')(model)
         if self.config.bayesian:
             model = keras.layers.Dropout(0.5)(model, training=True)
 
         model = keras.layers.Flatten()(model)
-        model = keras.layers.Dense(1024, activation='relu')(model)
+        model = keras.layers.Dense(1024, activation='relu', name="dense1")(model)
         model = keras.layers.BatchNormalization()(model)
         if self.config.bayesian:
             model = keras.layers.Dropout(0.5)(model, training=True)
-        model = keras.layers.Dense(1024, activation='relu')(model)
+        model = keras.layers.Dense(1024, activation='relu', name="dense2")(model)
         model = keras.layers.BatchNormalization()(model)
-        outputs = keras.layers.Dense(self.num_classes, activation='softmax')(model)
+        outputs = keras.layers.Dense(self.num_classes, activation='softmax', name="output")(model)
 
         model = keras.Model(inputs, outputs)
         optimiser = keras.optimizers.Adadelta(lr=self.config.learning_rate,
@@ -91,6 +91,9 @@ class Model:
         :param test: Boolean if the model should be tested.
         :return: Training metrics, accuracy, mean class accuray, recall, precision, f1-score and loss.
         """
+
+        def pre_process(image):
+            return image.astype('float32')/255.
 
         class EarlyStop(keras.callbacks.Callback):
             def __init__(self, min_epochs=0, batch=5, target=1., save_path="model", log_fn=print):
@@ -137,7 +140,7 @@ class Model:
             self.model.load_weights(self.config.model_path)
             self.log('Model Restored')
 
-        gen = keras.preprocessing.image.ImageDataGenerator()
+        gen = keras.preprocessing.image.ImageDataGenerator(preprocessing_function=pre_process)
         train_x, train_y = data.get_training_data()
         val_x, val_y = data.sample_data(data.val_x, data.val_y)
         if data.pseudo_indices != []:
