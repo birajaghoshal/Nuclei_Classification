@@ -127,6 +127,15 @@ def load_configs():
     parser.add_argument("--shortlist", type=int, default=int(config["bootstrap"]["shortlist"]),
                         help="Integer representing the shortlist size for the bootstrap models")
 
+    # Autoencoder Parameters
+    parser.add_argument("--auto_init", action="store_true",
+                        default=config["autoencoder"]["auto_init"].lower() == "true",
+                        help="If an autoencoder should be used to initilise the weights of the CNN.")
+    parser.add_argument("--auto_threshold", type=float, default=float(config["autoencoder"]["auto_threshold"]),
+                        help="The training threshold for the autoencoder.")
+    parser.add_argument("--auto_max_epochs", type=int, default=int(config["autoencoder"]["auto_max_epochs"]),
+                        help="The maxiumum number of epochs for the autoencoder.")
+
     # Plotting Parameters
     parser.add_argument("--plot_dir", type=str, default=config["plotting"]["plot_dir"],
                         help="Directory Path where the plots will be stored.")
